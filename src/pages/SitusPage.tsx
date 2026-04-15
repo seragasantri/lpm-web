@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import React from 'react';
 import {
   Globe, ExternalLink, BookOpen, Library, Monitor,
@@ -37,6 +38,7 @@ function SiteCard({ icon, name, description, url }: SiteCardProps) {
 }
 
 export default function SitusPage() {
+  useEffect(() => { document.title = 'Situs Terkait :: LPM UIN Raden Fatah Palembang'; }, []);
   const sites = [
     {
       icon: <Shield size={20} />,

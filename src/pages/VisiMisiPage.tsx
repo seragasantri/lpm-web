@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import Layout from '../components/Layout';
 import { Target, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -39,6 +40,7 @@ const accreditationLevels = [
 ];
 
 export default function VisiMisiPage() {
+  useEffect(() => { document.title = 'Visi dan Misi :: LPM UIN Raden Fatah Palembang'; }, []);
   return (
     <Layout>
       {/* Page Header */}

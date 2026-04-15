@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import React from 'react';
 import { ExternalLink, BookOpen, FileText, Scale, Building2, Briefcase, Award } from 'lucide-react';
 import Layout from '../components/Layout';
@@ -80,6 +81,7 @@ function RegulationGroup({ title, icon, accentColor, accentBg, items }: Regulati
 }
 
 export default function PeraturanPage() {
+  useEffect(() => { document.title = 'Peraturan :: LPM UIN Raden Fatah Palembang'; }, []);
   const regulations = [
     {
       title: 'Undang-Undang',

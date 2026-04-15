@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import React from 'react';
 import { ShieldCheck, Users, Target, FileText, Calendar, Download, UserCircle } from 'lucide-react';
 import Layout from '../components/Layout';
@@ -44,6 +45,7 @@ function OrgMember({ name, role, top, left, isChair }: OrgMemberProps) {
 }
 
 export default function GPMFPage() {
+  useEffect(() => { document.title = 'GPMF :: LPM UIN Raden Fatah Palembang'; }, []);
   const functions = [
     {
       icon: <ShieldCheck size={20} />,

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 
 import { Award, CheckCircle, Download, FileText, ExternalLink, Trophy, Target, ClipboardCheck } from 'lucide-react';
 import Layout from '../components/Layout';
@@ -75,6 +76,7 @@ function DocumentCard({ title, description, type }: DocumentCardProps) {
 }
 
 export default function ISOPage() {
+  useEffect(() => { document.title = 'ISO 9001:2015 :: LPM UIN Raden Fatah Palembang'; }, []);
   const milestones: MilestoneProps[] = [
     {
       year: '2017',

@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 
 import { Award, Download, QrCode, CheckCircle } from 'lucide-react';
 import Layout from '../components/Layout';
 
 export default function SertifikatPage() {
+  useEffect(() => { document.title = 'Sertifikat Akreditasi :: LPM UIN Raden Fatah Palembang'; }, []);
   const stats = [
     { label: 'Akreditasi Unggul', count: 34, color: 'bg-emerald-500', textColor: 'text-emerald-700', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
     { label: 'Akreditasi A', count: 4, color: 'bg-blue-500', textColor: 'text-blue-700', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },

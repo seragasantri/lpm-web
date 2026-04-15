@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import Layout from '../components/Layout';
 import { ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -83,6 +84,7 @@ const departmentColors: Record<string, string> = {
 };
 
 export default function StafPage() {
+  useEffect(() => { document.title = 'Pimpinan dan Staf :: LPM UIN Raden Fatah Palembang'; }, []);
   return (
     <Layout>
       {/* Page Header */}

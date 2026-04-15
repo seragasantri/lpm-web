@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import React from 'react';
 import { ShieldCheck, Download, Users, ClipboardCheck, Target, BookUser, FileText } from 'lucide-react';
 import Layout from '../components/Layout';
@@ -21,6 +22,7 @@ function FunctionCard({ icon, title, description }: FunctionCardProps) {
 }
 
 export default function GPMPPage() {
+  useEffect(() => { document.title = 'GPMP :: LPM UIN Raden Fatah Palembang'; }, []);
   const functions = [
     {
       icon: <ClipboardCheck size={20} />,

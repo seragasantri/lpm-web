@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import Layout from '../components/Layout';
 import { Quote, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function SambutanPage() {
+  useEffect(() => { document.title = 'Sambutan Ketua LPM :: LPM UIN Raden Fatah Palembang'; }, []);
   return (
     <Layout>
       {/* Page Header */}

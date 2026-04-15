@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import React, { useState } from 'react';
 import { X, ChevronLeft, ChevronRight, Camera } from 'lucide-react';
 import Layout from '../components/Layout';
@@ -100,6 +101,7 @@ const photos: Photo[] = [
 const categories = ['All', 'Audit', 'Workshop', 'Pelatihan'] as const;
 
 export default function GaleriPage() {
+  useEffect(() => { document.title = 'Galeri Foto :: LPM UIN Raden Fatah Palembang'; }, []);
   const [activeCategory, setActiveCategory] = useState<'All' | 'Audit' | 'Workshop' | 'Pelatihan'>('All');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);

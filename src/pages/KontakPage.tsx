@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { useState } from 'react';
 import Layout from '../components/Layout';
 import { MapPin, Phone, Mail, Send, User, FileText, MessageSquare, Clock, CheckCircle } from 'lucide-react';
 import { contactInfo } from '../data/navigation';
 
 export default function KontakPage() {
+  useEffect(() => { document.title = 'Kontak :: LPM UIN Raden Fatah Palembang'; }, []);
   const [formData, setFormData] = useState({
     name: '',
     identity: '',

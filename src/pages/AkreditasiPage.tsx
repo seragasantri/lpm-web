@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 
 import { AlertCircle, FileText, Download, ExternalLink, BookOpen, ClipboardCheck, FileCheck, Users, Globe } from 'lucide-react';
 import Layout from '../components/Layout';
@@ -71,6 +72,7 @@ function RelatedLink({ icon, title, url }: RelatedLinkProps) {
 }
 
 export default function AkreditasiPage() {
+  useEffect(() => { document.title = 'Instrumen Akreditasi BAN-PT :: LPM UIN Raden Fatah Palembang'; }, []);
   const instruments = [
     {
       icon: <ClipboardCheck size={22} />,

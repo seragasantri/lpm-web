@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import Layout from '../components/Layout';
 import { ShieldCheck, MapPin, Building, Phone, Mail, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -5,6 +6,7 @@ import { contactInfo } from '../data/navigation';
 
 
 export default function ProfilPage() {
+  useEffect(() => { document.title = 'Profil LPM :: LPM UIN Raden Fatah Palembang'; }, []);
   const missions = [
     'Melaksanakan sistem penjaminan mutu internal secara terencana dan kontinyu dengan mengacu kepada standar nasional dan internasional.',
     'Mengkoordinir dan menyiapkan kegiatan penjaminan mutu eksternal melalui akreditasi, baik di tingkat program studi maupun institusi.',
