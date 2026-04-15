@@ -1,0 +1,34 @@
+.coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--spacing-4xl) var(--spacing-lg);
+  min-height: 400px;
+}
+
+.coming-soon-icon {
+  color: var(--sky-400);
+  margin-bottom: var(--spacing-xl);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.95); }
+}
+
+.coming-soon-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-gray-900);
+  margin-bottom: var(--spacing-md);
+}
+
+.coming-soon-desc {
+  font-size: 1rem;
+  color: var(--color-gray-500);
+  max-width: 400px;
+  line-height: 1.7;
+}

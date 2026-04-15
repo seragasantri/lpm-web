@@ -1,0 +1,122 @@
+.poll-section {
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.poll-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  background: linear-gradient(135deg, var(--color-secondary-500), var(--color-secondary-600));
+  color: var(--color-gray-900);
+}
+
+.poll-header-icon {
+  flex-shrink: 0;
+}
+
+.poll-title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.poll-content {
+  padding: var(--spacing-lg);
+}
+
+.poll-question {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-gray-800);
+  margin-bottom: var(--spacing-lg);
+  line-height: 1.5;
+}
+
+.poll-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.poll-option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.poll-option:hover {
+  border-color: var(--sky-300);
+  background: var(--sky-50);
+}
+
+.poll-option.selected {
+  border-color: var(--sky-500);
+  background: var(--sky-50);
+}
+
+.poll-option input[type="radio"] {
+  accent-color: var(--sky-600);
+  width: 16px;
+  height: 16px;
+}
+
+.poll-option-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-gray-700);
+}
+
+.poll-submit {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--sky-600);
+  color: var(--color-white);
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+}
+
+.poll-submit:hover:not(:disabled) {
+  background: var(--sky-700);
+}
+
+.poll-submit:disabled {
+  background: var(--color-gray-300);
+  cursor: not-allowed;
+}
+
+.poll-success {
+  text-align: center;
+  padding: var(--spacing-lg);
+}
+
+.poll-success-icon {
+  color: var(--color-secondary-500);
+  margin-bottom: var(--spacing-md);
+}
+
+.poll-success p {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-gray-800);
+  margin-bottom: var(--spacing-sm);
+}
+
+.poll-success-vote {
+  font-size: 0.8125rem;
+  color: var(--color-gray-500);
+}
+
+.poll-success-vote strong {
+  color: var(--sky-600);
+}

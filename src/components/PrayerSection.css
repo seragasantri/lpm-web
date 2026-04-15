@@ -1,0 +1,103 @@
+.prayer-section {
+  background: linear-gradient(135deg, var(--sky-700), var(--sky-800));
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  color: var(--color-white);
+}
+
+.prayer-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.prayer-header-icon {
+  color: var(--color-secondary-400);
+}
+
+.prayer-title {
+  font-size: 1rem;
+  font-weight: 700;
+  flex: 1;
+}
+
+.prayer-location {
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-full);
+  color: var(--sky-200);
+}
+
+.prayer-list {
+  padding: var(--spacing-sm);
+}
+
+.prayer-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.prayer-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.prayer-item-active {
+  background: rgba(250, 204, 21, 0.2);
+  border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.prayer-item-active .prayer-item-time {
+  color: var(--color-secondary-400);
+  font-weight: 700;
+}
+
+.prayer-item-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.prayer-item-icon {
+  color: var(--sky-300);
+  display: flex;
+}
+
+.prayer-item-arabic {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--sky-200);
+  min-width: 40px;
+}
+
+.prayer-item-name {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.prayer-item-time {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--sky-100);
+  font-variant-numeric: tabular-nums;
+}
+
+.prayer-footer {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.prayer-location-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.6875rem;
+  color: var(--sky-300);
+}
