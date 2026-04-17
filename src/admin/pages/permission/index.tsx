@@ -86,26 +86,29 @@ export default function PermissionIndex() {
     </div>
   );
 
-  const columns: Column<Permission>[] = [
+  // Compute modul + action for each permission for sorting
+  const parsed = permissions.map(p => {
+    const { modul, action } = parsePermissionName(p.name);
+    return { ...p, _modul: modul, _action: action };
+  });
+
+  const columns: Column<typeof parsed[0]>[] = [
     {
-      key: 'modul',
+      key: '_modul',
       label: 'Modul',
       sortable: true,
-      render: (_: unknown, item: Permission) => {
-        const { modul, action } = parsePermissionName(item.name);
-        return (
-          <div>
-            <div className="font-semibold text-slate-800">{modul}</div>
-            <div className="text-xs text-slate-400 mt-0.5">{action}</div>
-          </div>
-        );
-      },
+      render: (_: unknown, item) => (
+        <div>
+          <div className="font-semibold text-slate-800">{item._modul}</div>
+          <div className="text-xs text-slate-400 mt-0.5">{item._action}</div>
+        </div>
+      ),
     },
     {
       key: 'aplikasi',
       label: 'Aplikasi',
       sortable: true,
-      render: (_: unknown, item: Permission) => (
+      render: (_: unknown, item) => (
         <span className="text-slate-600">{item.aplikasi ?? '-'}</span>
       ),
     },
@@ -113,7 +116,7 @@ export default function PermissionIndex() {
       key: 'roles',
       label: 'Dipakai oleh Role',
       sortable: false,
-      render: (_: unknown, item: Permission) => {
+      render: (_: unknown, item) => {
         const permRoles = getPermRoles(item.name);
         if (permRoles.length === 0) {
           return <span className="text-slate-400 text-sm">Belum ada role</span>;
@@ -160,7 +163,7 @@ export default function PermissionIndex() {
 
       <DataTable
         columns={columns}
-        data={permissions}
+        data={parsed}
         searchable={['name', 'aplikasi']}
         loading={loading}
         emptyMessage="Belum ada data permission."
