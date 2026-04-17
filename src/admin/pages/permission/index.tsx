@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { getPermissions, getRoles, type Permission, type RoleResponse } from '../../../lib/api';
-import DataTable, { type Column } from '../../components/DataTable';
+import DataTable, { type Column, type TableFilter } from '../../components/DataTable';
 import { Shield, Eye, FileText } from 'lucide-react';
 
 // Parse permission name: modul_action (e.g., "berita_create" → modul: "Berita", action: "Buat")
@@ -10,16 +10,10 @@ function parsePermissionName(name: string): { modul: string; action: string } {
   const action = parts.pop() ?? '';
   const modul = parts.join(' ');
 
-  const actionMap: Record<string, string> = {
-    create: 'Buat',
-    read: 'Lihat',
-    update: 'Edit',
-    delete: 'Hapus',
-  };
 
   return {
     modul: modul.charAt(0).toUpperCase() + modul.slice(1),
-    action: actionMap[action] ?? action,
+    action: action,
   };
 }
 
@@ -92,6 +86,15 @@ export default function PermissionIndex() {
     return { ...p, _modul: modul, _action: action };
   });
 
+  // Extract unique modul names for filter
+  const modulOptions = [...new Set(parsed.map(p => p._modul))].sort().map(v => ({ value: v, label: v }));
+  const aplikasiOptions = [...new Set(parsed.map(p => p.aplikasi ?? '-'))].sort().map(v => ({ value: v, label: v }));
+
+  const filters: TableFilter[] = [
+    { key: '_modul', label: 'Filter Modul', options: modulOptions },
+    { key: 'aplikasi', label: 'Filter Aplikasi', options: aplikasiOptions },
+  ];
+
   const columns: Column<typeof parsed[0]>[] = [
     {
       key: '_modul',
@@ -135,16 +138,6 @@ export default function PermissionIndex() {
         );
       },
     },
-    {
-      key: 'actions',
-      label: 'Aksi',
-      sortable: false,
-      render: () => (
-        <button className="p-1.5 text-sky-600 hover:bg-sky-50 rounded-lg transition-colors" title="Lihat Detail">
-          <Eye size={16} />
-        </button>
-      ),
-    },
   ];
 
   return (
@@ -165,6 +158,7 @@ export default function PermissionIndex() {
         columns={columns}
         data={parsed}
         searchable={['name', 'aplikasi']}
+        filters={filters}
         loading={loading}
         emptyMessage="Belum ada data permission."
         perPage={15}
