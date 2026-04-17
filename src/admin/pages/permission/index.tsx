@@ -89,9 +89,11 @@ export default function PermissionIndex() {
   // Extract unique modul names for filter
   const modulOptions = [...new Set(parsed.map(p => p._modul))].sort().map(v => ({ value: v, label: v }));
   const aplikasiOptions = [...new Set(parsed.map(p => p.aplikasi ?? '-'))].sort().map(v => ({ value: v, label: v }));
+  const actionOptions = [...new Set(parsed.map(p => p._action))].sort().map(v => ({ value: v, label: v }));
 
   const filters: TableFilter[] = [
     { key: '_modul', label: 'Filter Modul', options: modulOptions },
+    { key: '_action', label: 'Filter Action', options: actionOptions },
     { key: 'aplikasi', label: 'Filter Aplikasi', options: aplikasiOptions },
   ];
 
