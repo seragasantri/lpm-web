@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { getPermissions, createPermission, updatePermission, deletePermission, type Permission } from '../../../lib/api';
-import { Shield, Plus, Pencil, Trash2, X, Loader, Save, FileText } from 'lucide-react';
+import DataTable, { Column } from '../../components/DataTable';
+import { Shield, Plus, X, Loader, Save, FileText } from 'lucide-react';
 
 export default function PermissionIndex() {
   useEffect(() => { document.title = 'Manajemen Permission :: LPM Admin'; }, []);
@@ -13,7 +14,6 @@ export default function PermissionIndex() {
   const [editPerm, setEditPerm] = useState<Permission | null>(null);
   const [form, setForm] = useState({ name: '', aplikasi: '' });
   const [saving, setSaving] = useState(false);
-  const [search, setSearch] = useState('');
 
   useEffect(() => {
     if (!hasPermission('user.read')) { setLoading(false); return; }
@@ -32,7 +32,7 @@ export default function PermissionIndex() {
     setShowModal(true);
   };
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSaving(true);
     try {
@@ -55,17 +55,6 @@ export default function PermissionIndex() {
     setPermissions(prev => prev.filter(x => x.id !== p.id));
   };
 
-  const filtered = permissions.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.aplikasi?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  if (loading) return (
-    <div className="flex items-center justify-center py-20 text-slate-400">
-      <Loader className="w-6 h-6 animate-spin" />
-    </div>
-  );
-
   if (!hasPermission('user.read')) return (
     <div className="p-6">
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center text-red-700 flex flex-col items-center gap-3">
@@ -75,6 +64,25 @@ export default function PermissionIndex() {
       </div>
     </div>
   );
+
+  const columns: Column<Permission>[] = [
+    {
+      key: 'name',
+      label: 'Nama Permission',
+      sortable: true,
+      render: (_: unknown, item: Permission) => (
+        <span className="font-semibold text-slate-800">{item.name}</span>
+      ),
+    },
+    {
+      key: 'aplikasi',
+      label: 'Aplikasi',
+      sortable: true,
+      render: (_: unknown, item: Permission) => (
+        <span className="text-slate-600">{item.aplikasi ?? '-'}</span>
+      ),
+    },
+  ];
 
   return (
     <div className="p-6 space-y-6">
@@ -95,49 +103,17 @@ export default function PermissionIndex() {
         )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-4 flex items-center gap-4 border-b border-slate-100">
-          <input type="text" placeholder="Cari permission..." value={search} onChange={e => setSearch(e.target.value)} className="flex-1 max-w-sm px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">Nama Permission</th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">Aplikasi</th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600 w-28">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(p => (
-                <tr key={p.id} className="border-b border-slate-50 hover:bg-sky-50/50 transition-colors">
-                  <td className="px-4 py-3 font-semibold text-slate-800">{p.name}</td>
-                  <td className="px-4 py-3 text-slate-600">{p.aplikasi ?? '-'}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      {hasPermission('user.update') && (
-                        <button onClick={() => openEdit(p)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
-                          <Pencil size={16} />
-                        </button>
-                      )}
-                      {hasPermission('user.delete') && (
-                        <button onClick={() => handleDelete(p)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="px-4 py-12 text-center text-slate-400">Belum ada data permission.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        columns={columns}
+        data={permissions}
+        onEdit={hasPermission('user.update') ? openEdit : undefined}
+        onDelete={hasPermission('user.delete') ? handleDelete : undefined}
+        searchable={['name', 'aplikasi']}
+        loading={loading}
+        emptyMessage="Belum ada data permission."
+        createLabel="Tambah"
+        onCreate={hasPermission('user.create') ? openCreate : undefined}
+      />
 
       {/* Modal */}
       {showModal && (
@@ -155,7 +131,7 @@ export default function PermissionIndex() {
                   onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                   required
                   className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  placeholder="Contoh: Create Berita"
+                  placeholder="Contoh: berita_create"
                 />
               </div>
               <div>
@@ -168,7 +144,7 @@ export default function PermissionIndex() {
                   placeholder="Contoh: LPM Website"
                 />
               </div>
-                            <div className="flex justify-end gap-3 pt-2">
+              <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">Batal</button>
                 <button type="submit" disabled={saving} className="flex items-center gap-2 px-5 py-2.5 bg-sky-600 text-white rounded-lg text-sm font-semibold hover:bg-sky-700 disabled:opacity-60 transition-colors">
                   {saving ? <Loader className="w-4 h-4 animate-spin" /> : <Save size={16} />} Simpan

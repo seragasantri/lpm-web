@@ -8,6 +8,8 @@ interface Column<T> {
   render?: (value: unknown, item: T) => React.ReactNode;
 }
 
+export { Column };
+
 export interface TableFilter {
   key: string;
   label: string;
@@ -28,7 +30,7 @@ interface DataTableProps<T> {
   perPage?: number;
 }
 
-export default function DataTable<T extends { id: string }>({
+export default function DataTable<T extends { id: string | number }>({
   columns, data, onEdit, onDelete, onCreate, searchable, filters = [], emptyMessage = 'Belum ada data.', createLabel = 'Tambah', loading, perPage = 10
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('');
@@ -94,7 +96,7 @@ export default function DataTable<T extends { id: string }>({
   }
 
   function handleDelete(item: T) {
-    if (onDelete && confirm('Yakin ingin menghapus data ini?')) onDelete(item);
+    if (onDelete) onDelete(item);
   }
 
   return (
