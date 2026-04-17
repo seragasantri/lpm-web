@@ -110,4 +110,48 @@ export async function refreshToken(): Promise<string> {
   return token;
 }
 
+// Permissions
+export interface Permission {
+  id: number;
+  name: string;
+  aplikasi: string;
+  modul?: string;
+  guard_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getPermissions(): Promise<Permission[]> {
+  const response = await apiFetch('/permissions');
+  const json: ApiResponse<Permission[]> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function createPermission(data: { name: string; aplikasi?: string }): Promise<Permission> {
+  const response = await apiFetch('/permissions', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<Permission> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function updatePermission(id: number, data: { name: string; aplikasi?: string }): Promise<Permission> {
+  const response = await apiFetch(`/permissions/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<Permission> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function deletePermission(id: number): Promise<void> {
+  const response = await apiFetch(`/permissions/${id}`, { method: 'DELETE' });
+  const json: ApiResponse<null> = await response.json();
+  if (!json.success) throw new Error(json.message);
+}
+
 export { getToken, getUser, setToken, setUser, clearAuth, apiFetch, API_BASE };

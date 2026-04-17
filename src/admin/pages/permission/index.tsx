@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import { getPermissions, createPermission, updatePermission, deletePermission } from '../../../lib/mockData';
-import type { Permission } from '../../../lib/types';
+import { getPermissions, createPermission, updatePermission, deletePermission, type Permission } from '../../../lib/api';
 import { Shield, Plus, Pencil, Trash2, X, Loader, Save, FileText } from 'lucide-react';
 
 export default function PermissionIndex() {
@@ -12,7 +11,7 @@ export default function PermissionIndex() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editPerm, setEditPerm] = useState<Permission | null>(null);
-  const [form, setForm] = useState({ nama: '', aplikasi: '', modul: '' });
+  const [form, setForm] = useState({ name: '', aplikasi: '' });
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
 
@@ -23,13 +22,13 @@ export default function PermissionIndex() {
 
   const openCreate = () => {
     setEditPerm(null);
-    setForm({ nama: '', aplikasi: '', modul: '' });
+    setForm({ name: '', aplikasi: '' });
     setShowModal(true);
   };
 
   const openEdit = (p: Permission) => {
     setEditPerm(p);
-    setForm({ nama: p.nama, aplikasi: p.aplikasi, modul: p.modul });
+    setForm({ name: p.name, aplikasi: p.aplikasi ?? '' });
     setShowModal(true);
   };
 
@@ -51,15 +50,14 @@ export default function PermissionIndex() {
   };
 
   const handleDelete = async (p: Permission) => {
-    if (!confirm(`Yakin ingin menghapus permission "${p.nama}"?`)) return;
+    if (!confirm(`Yakin ingin menghapus permission "${p.name}"?`)) return;
     await deletePermission(p.id);
     setPermissions(prev => prev.filter(x => x.id !== p.id));
   };
 
   const filtered = permissions.filter(p =>
-    p.nama.toLowerCase().includes(search.toLowerCase()) ||
-    p.aplikasi.toLowerCase().includes(search.toLowerCase()) ||
-    p.modul.toLowerCase().includes(search.toLowerCase())
+    p.name.toLowerCase().includes(search.toLowerCase()) ||
+    p.aplikasi?.toLowerCase().includes(search.toLowerCase())
   );
 
   if (loading) return (
@@ -107,18 +105,14 @@ export default function PermissionIndex() {
               <tr className="bg-slate-50 border-b border-slate-200">
                 <th className="text-left px-4 py-3 font-semibold text-slate-600">Nama Permission</th>
                 <th className="text-left px-4 py-3 font-semibold text-slate-600">Aplikasi</th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">Modul</th>
                 <th className="text-left px-4 py-3 font-semibold text-slate-600 w-28">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map(p => (
                 <tr key={p.id} className="border-b border-slate-50 hover:bg-sky-50/50 transition-colors">
-                  <td className="px-4 py-3 font-semibold text-slate-800">{p.nama}</td>
-                  <td className="px-4 py-3 text-slate-600">{p.aplikasi}</td>
-                  <td className="px-4 py-3">
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">{p.modul}</span>
-                  </td>
+                  <td className="px-4 py-3 font-semibold text-slate-800">{p.name}</td>
+                  <td className="px-4 py-3 text-slate-600">{p.aplikasi ?? '-'}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       {hasPermission('user.update') && (
@@ -137,7 +131,7 @@ export default function PermissionIndex() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-12 text-center text-slate-400">Belum ada data permission.</td>
+                  <td colSpan={3} className="px-4 py-12 text-center text-slate-400">Belum ada data permission.</td>
                 </tr>
               )}
             </tbody>
@@ -157,8 +151,8 @@ export default function PermissionIndex() {
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nama Permission</label>
                 <input
-                  value={form.nama}
-                  onChange={e => setForm(p => ({ ...p, nama: e.target.value }))}
+                  value={form.name}
+                  onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                   required
                   className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                   placeholder="Contoh: Create Berita"
@@ -174,17 +168,7 @@ export default function PermissionIndex() {
                   placeholder="Contoh: LPM Website"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nama Modul</label>
-                <input
-                  value={form.modul}
-                  onChange={e => setForm(p => ({ ...p, modul: e.target.value }))}
-                  required
-                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  placeholder="Contoh: Berita, Galeri"
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
+                            <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">Batal</button>
                 <button type="submit" disabled={saving} className="flex items-center gap-2 px-5 py-2.5 bg-sky-600 text-white rounded-lg text-sm font-semibold hover:bg-sky-700 disabled:opacity-60 transition-colors">
                   {saving ? <Loader className="w-4 h-4 animate-spin" /> : <Save size={16} />} Simpan
