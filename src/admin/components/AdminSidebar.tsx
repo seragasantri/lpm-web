@@ -104,6 +104,7 @@ const navItems: NavItem[] = [
     ]
   },
   { label: 'Log Aktivitas', to: '/admin/log', icon: Activity, permissionKey: 'log' },
+  { label: 'Pengaturan', to: '/admin/settings', icon: Settings, permissionKey: 'user' },
 ];
 
 interface AdminSidebarProps {

@@ -23,8 +23,10 @@ function clearAuth() {
 
 async function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
   const token = getToken();
+  const lang = localStorage.getItem('language') || 'id';
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'X-Language': lang,
     ...(options.headers as Record<string, string> || {}),
   };
   if (token) {
@@ -155,20 +157,11 @@ export async function deletePermission(id: number): Promise<void> {
 }
 
 // Roles
-export interface Role {
-  id: number;
-  name: string;
-  guard_name: string;
-  permissions: string[];
-  created_at: string;
-  updated_at: string;
-}
-
 export interface RoleResponse {
   id: number;
   name: string;
   guard_name: string;
-  permissions: Permission[];
+  permissions: { name: string }[];
   created_at: string;
   updated_at: string;
 }
@@ -176,6 +169,24 @@ export interface RoleResponse {
 export async function getRoles(): Promise<RoleResponse[]> {
   const response = await apiFetch('/roles');
   const json: ApiResponse<RoleResponse[]> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+// Settings
+export async function getSettings(): Promise<Record<string, string>> {
+  const response = await apiFetch('/settings');
+  const json: ApiResponse<Record<string, string>> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function updateSettings(data: { enabled_languages: string[] }): Promise<{ enabled_languages: string[] }> {
+  const response = await apiFetch('/settings', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<{ enabled_languages: string[] }> = await response.json();
   if (!json.success) throw new Error(json.message);
   return json.data;
 }

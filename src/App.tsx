@@ -67,6 +67,7 @@ import ProfilStruktur from './admin/pages/profil/struktur';
 import ProfilKontak from './admin/pages/profil/kontak';
 import SpmiGpmp from './admin/pages/spmi/gpmp';
 import SpmiGpmf from './admin/pages/spmi/gpmf';
+import GeneralSettings from './admin/pages/settings/general';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -154,6 +155,7 @@ export default function App() {
           <Route path="profil/kontak" element={<ProfilKontak />} />
           <Route path="spmi/gpmp" element={<SpmiGpmp />} />
           <Route path="spmi/gpmf" element={<SpmiGpmf />} />
+          <Route path="settings" element={<GeneralSettings />} />
         </Route>
 
         {/* ========== 404 ========== */}

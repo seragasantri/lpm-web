@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Search, Menu, X, ChevronDown } from 'lucide-react';
 import { navItems } from '../data/navigation';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -230,7 +231,9 @@ export default function Navbar() {
             <span className="text-sky-200">|</span>
             <span>{dateStr}</span>
           </div>
-          <div className="flex items-center gap-4 text-xs sm:ml-auto">
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <span className="text-sky-200 hidden sm:block">|</span>
             <a
               href="http://radenfatah.ac.id"
               target="_blank"
