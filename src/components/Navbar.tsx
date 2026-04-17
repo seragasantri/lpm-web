@@ -57,11 +57,10 @@ export default function Navbar() {
           href={item.href}
           target="_blank"
           rel="noopener noreferrer"
-          className={`flex items-center gap-1 px-4 py-3 text-sm font-medium transition-all duration-200 border-b-4 ${
-            active
+          className={`flex items-center gap-1 px-4 py-3 text-sm font-medium transition-all duration-200 border-b-4 ${active
               ? 'bg-sky-900 text-yellow-400 border-yellow-400'
               : 'text-white border-transparent hover:bg-sky-900 hover:text-white'
-          }`}
+            }`}
         >
           {item.label}
         </a>
@@ -71,11 +70,10 @@ export default function Navbar() {
     return (
       <Link
         to={item.href || '#'}
-        className={`flex items-center gap-1 px-4 py-3 text-sm font-medium transition-all duration-200 border-b-4 ${
-          active
+        className={`flex items-center gap-1 px-4 py-3 text-sm font-medium transition-all duration-200 border-b-4 ${active
             ? 'bg-sky-900 text-yellow-400 border-yellow-400'
             : 'text-white border-transparent hover:bg-sky-900 hover:text-white'
-        }`}
+          }`}
       >
         {item.label}
       </Link>
@@ -90,11 +88,10 @@ export default function Navbar() {
       <li key={item.label} className="relative">
         <button
           onClick={() => handleDropdownToggle(item.label)}
-          className={`flex items-center gap-1 px-4 py-3 text-sm font-medium transition-all duration-200 border-b-4 w-full ${
-            hasActiveChild
+          className={`flex items-center gap-1 px-4 py-3 text-sm font-medium transition-all duration-200 border-b-4 w-full ${hasActiveChild
               ? 'bg-sky-900 text-yellow-400 border-yellow-400'
               : 'text-white border-transparent hover:bg-sky-900 hover:text-white'
-          }`}
+            }`}
         >
           {item.label}
           <ChevronDown
@@ -103,9 +100,8 @@ export default function Navbar() {
           />
         </button>
         <ul
-          className={`absolute left-0 top-full min-w-[240px] bg-white shadow-2xl rounded-b-2xl border-t-4 border-t-yellow-400 overflow-hidden z-50 transition-all duration-200 ${
-            isOpen ? 'opacity-100 translate-y-0 visible' : 'opacity-0 -translate-y-2 invisible'
-          }`}
+          className={`absolute left-0 top-full min-w-[240px] bg-white shadow-2xl rounded-b-2xl border-t-4 border-t-yellow-400 overflow-hidden z-50 transition-all duration-200 ${isOpen ? 'opacity-100 translate-y-0 visible' : 'opacity-0 -translate-y-2 invisible'
+            }`}
         >
           {item.children?.map((child) => (
             <li key={child.label}>
@@ -141,17 +137,15 @@ export default function Navbar() {
         <li key={item.label}>
           <button
             onClick={() => handleDropdownToggle(item.label)}
-            className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-white border-b border-white/10 transition-colors duration-150 ${
-              isOpen ? 'bg-sky-900' : ''
-            }`}
+            className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-white border-b border-white/10 transition-colors duration-150 ${isOpen ? 'bg-sky-900' : ''
+              }`}
           >
             <span>{item.label}</span>
             <ChevronDown size={16} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
           </button>
           <ul
-            className={`bg-sky-950/50 overflow-hidden transition-all duration-200 ${
-              isOpen ? 'max-h-[500px]' : 'max-h-0'
-            }`}
+            className={`bg-sky-950/50 overflow-hidden transition-all duration-200 ${isOpen ? 'max-h-[500px]' : 'max-h-0'
+              }`}
           >
             {item.children.map((child) => (
               <li key={child.label}>
@@ -188,9 +182,8 @@ export default function Navbar() {
             href={item.href}
             target="_blank"
             rel="noopener noreferrer"
-            className={`block px-4 py-3 text-sm font-medium border-b border-white/10 transition-colors duration-150 ${
-              active ? 'bg-sky-900 text-yellow-400' : 'text-white hover:bg-sky-900 hover:text-yellow-400'
-            }`}
+            className={`block px-4 py-3 text-sm font-medium border-b border-white/10 transition-colors duration-150 ${active ? 'bg-sky-900 text-yellow-400' : 'text-white hover:bg-sky-900 hover:text-yellow-400'
+              }`}
           >
             {item.label}
           </a>
@@ -198,9 +191,8 @@ export default function Navbar() {
           <Link
             to={item.href || '#'}
             onClick={() => setIsOpen(false)}
-            className={`block px-4 py-3 text-sm font-medium border-b border-white/10 transition-colors duration-150 ${
-              active ? 'bg-sky-900 text-yellow-400' : 'text-white hover:bg-sky-900 hover:text-yellow-400'
-            }`}
+            className={`block px-4 py-3 text-sm font-medium border-b border-white/10 transition-colors duration-150 ${active ? 'bg-sky-900 text-yellow-400' : 'text-white hover:bg-sky-900 hover:text-yellow-400'
+              }`}
           >
             {item.label}
           </Link>
@@ -226,9 +218,8 @@ export default function Navbar() {
     <header className="sticky top-0 z-50">
       {/* Top Bar */}
       <div
-        className={`bg-sky-950 text-sky-100 transition-all duration-300 overflow-hidden ${
-          scrolled ? 'h-0 opacity-0' : 'h-10 opacity-100'
-        }`}
+        className={`bg-sky-950 text-sky-100 transition-all duration-300 overflow-hidden ${scrolled ? 'h-0 opacity-0' : 'h-10 opacity-100'
+          }`}
       >
         <div className="max-w-7xl mx-auto px-4 h-10 flex items-center justify-between">
           <div className="hidden sm:flex items-center gap-4 text-xs">
@@ -268,9 +259,8 @@ export default function Navbar() {
 
       {/* Header */}
       <div
-        className={`bg-gradient-to-r from-sky-700 via-sky-600 to-sky-500 transition-all duration-300 ${
-          scrolled ? 'py-2 shadow-lg' : 'py-3'
-        }`}
+        className={`bg-gradient-to-r from-sky-700 via-sky-600 to-sky-500 transition-all duration-300 ${scrolled ? 'py-2 shadow-lg' : 'py-3'
+          }`}
       >
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between gap-4">
           {/* Brand */}
@@ -332,20 +322,17 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       <div
-        className={`lg:hidden fixed inset-0 z-40 transition-all duration-300 ${
-          isOpen ? 'visible' : 'invisible'
-        }`}
+        className={`lg:hidden fixed inset-0 z-40 transition-all duration-300 ${isOpen ? 'visible' : 'invisible'
+          }`}
       >
         <div
-          className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
-            isOpen ? 'opacity-100' : 'opacity-0'
-          }`}
+          className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'
+            }`}
           onClick={() => setIsOpen(false)}
         />
         <nav
-          className={`absolute top-0 left-0 bottom-0 w-72 bg-sky-800 shadow-2xl transition-transform duration-300 overflow-y-auto ${
-            isOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
+          className={`absolute top-0 left-0 bottom-0 w-72 bg-sky-800 shadow-2xl transition-transform duration-300 overflow-y-auto ${isOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
         >
           <div className="flex items-center justify-between p-4 border-b border-white/10">
             <span className="text-white font-bold text-base">Menu</span>

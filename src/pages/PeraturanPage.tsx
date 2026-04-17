@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import React from 'react';
 import { ExternalLink, BookOpen, FileText, Scale, Building2, Briefcase, Award } from 'lucide-react';
-import Layout from '../components/Layout';
+
 
 interface RegulationCardProps {
   category: string;
@@ -139,7 +139,7 @@ export default function PeraturanPage() {
   ];
 
   return (
-    <Layout>
+    <div>
       {/* Page Header */}
       <div className="bg-gradient-to-r from-sky-600 to-sky-700 text-white py-12 px-4">
         <div className="max-w-6xl mx-auto">
@@ -177,6 +177,6 @@ export default function PeraturanPage() {
           </a>
         </div>
       </div>
-    </Layout>
+    </div>
   );
 }

@@ -1,12 +1,21 @@
-import { useEffect } from 'react';
-import Layout from '../components/Layout';
+import { useEffect, useState } from 'react';
 import { Quote, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import Layout from '../components/Layout';
+import { getSambutan } from '../lib/mockData';
+import type { Sambutan } from '../lib/types';
 
 export default function SambutanPage() {
   useEffect(() => { document.title = 'Sambutan Ketua LPM :: LPM UIN Raden Fatah Palembang'; }, []);
+
+  const [sambutan, setSambutan] = useState<Sambutan | null>(null);
+
+  useEffect(() => {
+    getSambutan().then(setSambutan);
+  }, []);
+
   return (
-    <Layout>
+    <div>
       {/* Page Header */}
       <div className="bg-gradient-to-r from-sky-600 to-sky-700 text-white py-12">
         <div className="max-w-6xl mx-auto px-6">
@@ -41,8 +50,8 @@ export default function SambutanPage() {
                 {/* Photo */}
                 <div className="flex-shrink-0">
                   <img
-                    src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200&h=200"
-                    alt="Ketua LPM UIN Raden Fatah"
+                    src={sambutan?.foto || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200&h=200'}
+                    alt={sambutan?.nama || 'Ketua LPM UIN Raden Fatah'}
                     className="w-48 h-48 rounded-full object-cover ring-4 ring-sky-100"
                   />
                 </div>
@@ -50,15 +59,15 @@ export default function SambutanPage() {
                 {/* Quote text and signature */}
                 <div className="flex-1">
                   <blockquote className="text-xl md:text-2xl italic text-slate-600 leading-relaxed mb-8">
-                    "Komitmen terhadap mutu adalah sebuah perjalanan yang tidak pernah berakhir. Di LPM UIN Raden Fatah, kami mendedikasikan diri untuk memastikan bahwa setiap proses akademik berjalan sesuai standar tertinggi nasional dan internasional."
+                    {sambutan?.konten || '"Komitmen terhadap mutu adalah sebuah perjalanan yang tidak pernah berakhir. Di LPM UIN Raden Fatah, kami mendedikasikan diri untuk memastikan bahwa setiap proses akademik berjalan sesuai standar tertinggi nasional dan internasional."'}
                   </blockquote>
 
                   <div className="border-t border-slate-200 pt-6">
                     <p className="text-slate-800 font-semibold text-lg">
-                      Dr. H. Nama Pimpinan, M.Ag.
+                      {sambutan?.nama || 'Dr. H. Nama Pimpinan, M.Ag.'}
                     </p>
                     <p className="text-slate-500 text-sm mt-1">
-                      Ketua Lembaga Penjaminan Mutu UIN Raden Fatah Palembang
+                      {sambutan?.jabatan || 'Ketua Lembaga Penjaminan Mutu UIN Raden Fatah Palembang'}
                     </p>
                   </div>
                 </div>
@@ -67,6 +76,6 @@ export default function SambutanPage() {
           </div>
         </div>
       </div>
-    </Layout>
+    </div>
   );
 }

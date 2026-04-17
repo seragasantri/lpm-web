@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import Layout from '../components/Layout';
 import { ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -84,9 +83,8 @@ const departmentColors: Record<string, string> = {
 };
 
 export default function StafPage() {
-  useEffect(() => { document.title = 'Pimpinan dan Staf :: LPM UIN Raden Fatah Palembang'; }, []);
   return (
-    <Layout>
+    <>
       {/* Page Header */}
       <div className="bg-gradient-to-r from-sky-600 to-sky-700 text-white py-12">
         <div className="max-w-6xl mx-auto px-6">
@@ -134,9 +132,8 @@ export default function StafPage() {
               </h3>
               <p className="text-sky-600 font-medium mb-3">{staff.position}</p>
               <span
-                className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                  departmentColors[staff.department] || 'bg-slate-100 text-slate-600'
-                }`}
+                className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${departmentColors[staff.department] || 'bg-slate-100 text-slate-600'
+                  }`}
               >
                 {staff.department}
               </span>
@@ -144,6 +141,6 @@ export default function StafPage() {
           ))}
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

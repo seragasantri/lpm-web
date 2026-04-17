@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import React from 'react';
 import { ShieldCheck, Download, Users, ClipboardCheck, Target, BookUser, FileText } from 'lucide-react';
-import Layout from '../components/Layout';
+
 
 interface FunctionCardProps {
   icon: React.ReactNode;
@@ -58,7 +58,7 @@ export default function GPMPPage() {
   ];
 
   return (
-    <Layout>
+    <div>
       {/* Page Header */}
       <div className="bg-gradient-to-r from-sky-600 to-sky-700 text-white py-12 px-4">
         <div className="max-w-6xl mx-auto">
@@ -146,6 +146,6 @@ export default function GPMPPage() {
           </a>
         </div>
       </div>
-    </Layout>
+    </div>
   );
 }

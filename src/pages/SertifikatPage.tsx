@@ -1,44 +1,88 @@
-import { useEffect } from 'react';
-
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
 import { Award, Download, QrCode, CheckCircle } from 'lucide-react';
-import Layout from '../components/Layout';
+import { getSertifikat, getProdi, getFaker } from '../lib/mockData';
+import type { Sertifikat, Prodi, Faker } from '../lib/types';
+
+interface GroupedData {
+  faker: Faker;
+  rows: { prodi: Prodi; sertifikat: Sertifikat }[];
+}
+
+const STAT_CONFIGS = [
+  { label: 'Akreditasi Unggul', color: 'bg-emerald-500', textColor: 'text-emerald-700', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
+  { label: 'Akreditasi A', color: 'bg-blue-500', textColor: 'text-blue-700', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
+  { label: 'Akreditasi B', color: 'bg-yellow-500', textColor: 'text-yellow-700', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-200' },
+  { label: 'Baik Sekali', color: 'bg-purple-500', textColor: 'text-purple-700', bgColor: 'bg-purple-50', borderColor: 'border-purple-200' },
+];
+
+const HASIL_STYLES: Record<string, string> = {
+  Unggul: 'bg-emerald-100 text-emerald-700',
+  A: 'bg-blue-100 text-blue-700',
+  B: 'bg-yellow-100 text-yellow-700',
+  'Baik Sekali': 'bg-purple-100 text-purple-700',
+};
 
 export default function SertifikatPage() {
   useEffect(() => { document.title = 'Sertifikat Akreditasi :: LPM UIN Raden Fatah Palembang'; }, []);
-  const stats = [
-    { label: 'Akreditasi Unggul', count: 34, color: 'bg-emerald-500', textColor: 'text-emerald-700', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
-    { label: 'Akreditasi A', count: 4, color: 'bg-blue-500', textColor: 'text-blue-700', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
-    { label: 'Akreditasi B', count: 1, color: 'bg-yellow-500', textColor: 'text-yellow-700', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-200' },
-    { label: 'Baik Sekali', count: 7, color: 'bg-purple-500', textColor: 'text-purple-700', bgColor: 'bg-purple-50', borderColor: 'border-purple-200' },
-  ];
 
-  const totalProdi = stats.reduce((sum, s) => sum + s.count, 0);
+  const [sertifikats, setSertifikats] = useState<Sertifikat[]>([]);
+  const [prodis, setProdis] = useState<Prodi[]>([]);
+  const [fakers, setFakers] = useState<Faker[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const programs = [
-    { no: 1, prodi: 'Hukum Keluarga (Ahwal Syakhshiyyah)', jenjang: 'S1', lembaga: 'BAN-PT', noSk: '204/SK/BAN-PT/Akred/S/V/2024', berlaku: '7 Mei 2024 - 7 Mei 2029' },
-    { no: 2, prodi: 'Hukum Tata Negara', jenjang: 'S1', lembaga: 'BAN-PT', noSk: '356/SK/BAN-PT/Akred/S/VII/2023', berlaku: '11 Juli 2023 - 11 Juli 2028' },
-    { no: 3, prodi: 'Perbankan Syariah', jenjang: 'S1', lembaga: 'BAN-PT', noSk: '158/SK/BAN-PT/Akred/S/IV/2024', berlaku: '3 April 2024 - 3 April 2029' },
-    { no: 4, prodi: 'Pendidikan Guru Madrasah Ibtidaiyah (PGMI)', jenjang: 'S1', lembaga: 'BAN-PT', noSk: '112/SK/BAN-PT/Akred/S/III/2023', berlaku: '14 Maret 2023 - 14 Maret 2028' },
-    { no: 5, prodi: 'Pendidikan Agama Islam (PAI)', jenjang: 'S1', lembaga: 'BAN-PT', noSk: '089/SK/BAN-PT/Akred/S/II/2024', berlaku: '28 Februari 2024 - 28 Februari 2029' },
-    { no: 6, prodi: 'Ilmu Al-Qur\'an dan Tafsir', jenjang: 'S1', lembaga: 'BAN-PT', noSk: '267/SK/BAN-PT/Akred/S/VI/2023', berlaku: '6 Juni 2023 - 6 Juni 2028' },
-    { no: 7, prodi: 'Komunikasi dan Penyiaran Islam', jenjang: 'S1', lembaga: 'BAN-PT', noSk: '445/SK/BAN-PT/Akred/S/IX/2023', berlaku: '22 September 2023 - 22 September 2028' },
-    { no: 8, prodi: 'Manajemen Pendidikan', jenjang: 'S1', lembaga: 'BAN-PT', noSk: '078/SK/BAN-PT/Akred/S/I/2024', berlaku: '10 Januari 2024 - 10 Januari 2029' },
-    { no: 9, prodi: 'Psikologi', jenjang: 'S1', lembaga: 'BAN-PT', noSk: '189/SK/BAN-PT/Akred/S/V/2023', berlaku: '15 Mei 2023 - 15 Mei 2028' },
-    { no: 10, prodi: 'Ekonomi Syariah', jenjang: 'S1', lembaga: 'BAN-PT', noSk: '302/SK/BAN-PT/Akred/S/VII/2024', berlaku: '18 Juli 2024 - 18 Juli 2029' },
-    { no: 11, prodi: 'Hukum Bisnis Syariah', jenjang: 'S1', lembaga: 'BAN-PT', noSk: '134/SK/BAN-PT/Akred/S/IV/2023', berlaku: '5 April 2023 - 5 April 2028' },
-    { no: 12, prodi: 'Pendidikan Bahasa Arab', jenjang: 'S1', lembaga: 'BAN-PT', noSk: '411/SK/BAN-PT/Akred/S/VIII/2023', berlaku: '30 Agustus 2023 - 30 Agustus 2028' },
-    { no: 13, prodi: 'Tadris Matematika', jenjang: 'S1', lembaga: 'BAN-PT', noSk: '223/SK/BAN-PT/Akred/S/V/2024', berlaku: '20 Mei 2024 - 20 Mei 2029' },
-    { no: 14, prodi: 'Tadris Bahasa Indonesia', jenjang: 'S1', lembaga: 'BAN-PT', noSk: '167/SK/BAN-PT/Akred/S/IV/2024', berlaku: '12 April 2024 - 12 April 2029' },
-    { no: 15, prodi: 'Konseling Keluarga (Hukum Keluarga)', jenjang: 'S2', lembaga: 'BAN-PT', noSk: '089/SK/BAN-PT/Akred/S/II/2023', berlaku: '1 Februari 2023 - 1 Februari 2028' },
-  ];
+  useEffect(() => {
+    Promise.all([getSertifikat(), getProdi(), getFaker()]).then(([s, p, f]) => {
+      setSertifikats(s);
+      setProdis(p);
+      setFakers(f);
+      setLoading(false);
+    });
+  }, []);
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  const groupedData: GroupedData[] = fakers
+    .map(faker => ({
+      faker,
+      rows: prodis
+        .filter(p => p.faker_id === faker.id)
+        .flatMap(p =>
+          sertifikats
+            .filter(s => s.prodiId === p.id)
+            .map(sertifikat => ({ prodi: p, sertifikat }))
+        ),
+    }))
+    .filter(g => g.rows.length > 0);
+
+  const stats = STAT_CONFIGS.map(cfg => ({
+    ...cfg,
+    count: sertifikats.filter(s => s.skor === cfg.label).length,
+  }));
+
+  const totalProdi = sertifikats.length;
 
   return (
-    <Layout>
+    <div>
       {/* Page Header */}
       <div className="bg-gradient-to-r from-sky-600 to-sky-700 text-white py-12 px-4">
         <div className="max-w-6xl mx-auto">
+          <div className="flex items-center gap-2 text-sky-200 text-sm mb-3">
+            <Link to="/" className="flex items-center gap-1 hover:text-white transition-colors">
+              <ChevronLeft className="w-4 h-4" />
+              Beranda
+            </Link>
+            <span>/</span>
+            <span>Akreditasi</span>
+            <span>/</span>
+            <span className="text-white font-medium">Sertifikat</span>
+          </div>
           <h1 className="text-3xl font-bold mb-2">Sertifikat Akreditasi</h1>
-          <p className="text-sky-100">Daftar akreditasi program studi UIN Raden Fatah</p>
+          <p className="text-sky-100">Daftar akreditasi program studi UIN Raden Fatah Palembang</p>
         </div>
       </div>
 
@@ -48,7 +92,7 @@ export default function SertifikatPage() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-xl font-bold text-slate-800">Statistik Akreditasi</h2>
-              <p className="text-slate-500 text-sm mt-1">Total {totalProdi} program studi</p>
+              <p className="text-slate-500 text-sm mt-1">Total {totalProdi} sertifikat</p>
             </div>
             <div className="flex items-center gap-2 text-emerald-600">
               <CheckCircle size={20} />
@@ -75,11 +119,11 @@ export default function SertifikatPage() {
           <div>
             <div className="flex items-end gap-2 h-24">
               {stats.map((stat, index) => {
-                const width = (stat.count / totalProdi) * 100;
+                const width = totalProdi > 0 ? (stat.count / totalProdi) * 100 : 0;
                 return (
                   <div key={index} className="flex-1 flex flex-col items-center gap-1">
                     <div
-                      className={`w-full ${stat.color} rounded-t-md transition-all duration-300 min-h-[4px]`}
+                      className={`w-full ${stat.color} rounded-t-md transition-all duration-300`}
                       style={{ height: `${Math.max((width / 100) * 96, 4)}px` }}
                       title={`${stat.label}: ${stat.count}`}
                     />
@@ -114,37 +158,81 @@ export default function SertifikatPage() {
         {/* Table */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="text-left px-4 py-3 font-semibold text-slate-700 w-12">No</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-700">Program Studi</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-700 w-16">Jenjang</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-700">Lembaga Akreditasi</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-700">No. SK</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-700">Masa Berlaku</th>
-                </tr>
-              </thead>
-              <tbody>
-                {programs.map((prog, index) => (
-                  <tr
-                    key={index}
-                    className={`border-b border-slate-100 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-sky-50 transition-colors`}
-                  >
-                    <td className="px-4 py-3 text-slate-600">{prog.no}</td>
-                    <td className="px-4 py-3 font-medium text-slate-800">{prog.prodi}</td>
-                    <td className="px-4 py-3">
-                      <span className="bg-slate-100 text-slate-700 text-xs font-semibold px-2 py-0.5 rounded">
-                        {prog.jenjang}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">{prog.lembaga}</td>
-                    <td className="px-4 py-3 text-slate-600 text-xs">{prog.noSk}</td>
-                    <td className="px-4 py-3 text-slate-600 text-xs">{prog.berlaku}</td>
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="w-10 h-10 border-4 border-sky-400 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : groupedData.length === 0 ? (
+              <div className="text-center py-20 text-slate-400">
+                Belum ada data sertifikat.
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="text-left px-4 py-3 font-semibold text-slate-700 w-12">No</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-700">Program Studi</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-700 w-16">Jenjang</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-700">Masa Berlaku</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-700 w-16">Nilai</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-700 w-24">Hasil</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-700 w-20">Unduh</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {groupedData.map(group => (
+                    <React.Fragment key={group.faker.id}>
+                      {/* Group Header */}
+                      <tr className="bg-sky-50 border-b border-sky-200">
+                        <td colSpan={7} className="px-4 py-2.5">
+                          <span className="font-bold text-sky-800 text-sm">{group.faker.nama_faker}</span>
+                        </td>
+                      </tr>
+                      {/* Rows */}
+                      {group.rows.map((row, sIdx) => (
+                        <tr
+                          key={`${row.prodi.id}-${row.sertifikat.id}`}
+                          className={`border-b border-slate-100 ${sIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-sky-50 transition-colors`}
+                        >
+                          <td className="px-4 py-3 text-slate-600">{sIdx + 1}</td>
+                          <td className="px-4 py-3 font-medium text-slate-800">{row.prodi.nama_prodi}</td>
+                          <td className="px-4 py-3">
+                            <span className="bg-slate-100 text-slate-700 text-xs font-semibold px-2 py-0.5 rounded">
+                              {row.sertifikat.jenjang}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-slate-600 text-xs">
+                            {formatDate(row.sertifikat.mulaiAktif)} — {formatDate(row.sertifikat.akhirAktif)}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="font-bold text-slate-800 text-sm">{row.sertifikat.nilai || '-'}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${HASIL_STYLES[row.sertifikat.skor] ?? 'bg-slate-100 text-slate-600'}`}>
+                              {row.sertifikat.skor}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {row.sertifikat.fileSk ? (
+                              <a
+                                href={row.sertifikat.fileSk}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-sky-600 hover:text-sky-700 text-xs font-medium transition-colors"
+                              >
+                                <Download size={13} /> Unduh
+                              </a>
+                            ) : (
+                              <span className="text-slate-300 text-xs">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
 
@@ -166,6 +254,6 @@ export default function SertifikatPage() {
           </a>
         </div>
       </div>
-    </Layout>
+    </div>
   );
 }

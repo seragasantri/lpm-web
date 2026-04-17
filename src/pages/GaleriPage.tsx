@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import React, { useState } from 'react';
 import { X, ChevronLeft, ChevronRight, Camera } from 'lucide-react';
-import Layout from '../components/Layout';
 
 interface Photo {
   id: number;
@@ -134,7 +133,7 @@ export default function GaleriPage() {
   };
 
   return (
-    <Layout>
+    <div>
       {/* Page Header */}
       <div className="bg-gradient-to-r from-sky-600 to-sky-700 text-white py-12 px-4">
         <div className="max-w-6xl mx-auto">
@@ -252,6 +251,6 @@ export default function GaleriPage() {
           </button>
         </div>
       )}
-    </Layout>
+    </div>
   );
 }

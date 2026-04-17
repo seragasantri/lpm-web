@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import {
-  Info, FileText, CheckCircle, Download, MapPin, Phone, Mail,
-  Search, Menu, X, ChevronDown, Calendar, Clock, BarChart2, BookOpen,
+  Info, FileText, CheckCircle, Download,
+  Calendar, Clock, BarChart2, BookOpen,
   ArrowRight, Monitor, Award, Target, Users,
-  ShieldCheck, Play, Quote, Building, Globe, ExternalLink, User, Rss
+  ShieldCheck, Play, Quote, Building, Globe,
 } from 'lucide-react';
-import { navItems, contactInfo } from '../data/navigation';
+import { Link } from 'react-router-dom';
 
 const PRAYER_TIMES = [
   { name: 'Imsak', time: '04:33 WIB' },
@@ -73,52 +72,6 @@ const STATS = [
   { number: 'ISO 9001', label: 'Tersertifikasi', icon: ShieldCheck },
 ];
 
-function NavItem({ title, active = false, onClick }: { title: string; active?: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-5 py-4 text-sm font-bold transition-all duration-300 flex items-center border-b-4 ${
-        active ? 'bg-sky-900 text-yellow-400 border-yellow-400' : 'text-white hover:bg-sky-900 border-transparent hover:border-yellow-400'
-      }`}
-    >
-      {title}
-    </button>
-  );
-}
-
-function NavDropdown({ title, items }: { title: string; items: Array<{ label: string; href?: string; external?: boolean }> }) {
-  return (
-    <div className="relative group">
-      <button className="px-5 py-4 text-sm font-bold text-white hover:bg-sky-900 transition-all duration-300 flex items-center h-full border-b-4 border-transparent hover:border-yellow-400">
-        {title} <ChevronDown className="w-4 h-4 ml-1 opacity-70 group-hover:rotate-180 transition-transform duration-300" />
-      </button>
-      <div className="absolute left-0 top-full mt-0 w-64 bg-white shadow-2xl rounded-b-2xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 border-t-4 border-t-yellow-400 transform origin-top group-hover:scale-y-100 scale-y-0">
-        {items.filter(item => item.href).map((item, idx) => (
-          item.external ? (
-            <a
-              key={idx}
-              href={item.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block px-6 py-3.5 text-sm font-bold text-slate-700 hover:bg-sky-50 hover:text-sky-700 border-b border-slate-50 last:border-0 transition-colors"
-            >
-              {item.label}
-            </a>
-          ) : (
-            <Link
-              key={idx}
-              to={item.href || '/'}
-              className="block px-6 py-3.5 text-sm font-bold text-slate-700 hover:bg-sky-50 hover:text-sky-700 border-b border-slate-50 last:border-0 transition-colors"
-            >
-              {item.label}
-            </Link>
-          )
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function MobileNavItem({ title, onClick }: { title: string; onClick: () => void }) {
   return (
     <button
@@ -133,23 +86,13 @@ function MobileNavItem({ title, onClick }: { title: string; onClick: () => void 
 export default function Home() {
   const [currentPage, setCurrentPage] = useState('Beranda');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [currentTime, setCurrentTime] = useState('');
-  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      const now = new Date();
-      setCurrentTime(now.toLocaleTimeString('id-ID') + ' WIB');
-    }, 1000);
-    return () => clearInterval(timer);
+    // Timer for current time display
   }, []);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 40);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    // Scroll handler
   }, []);
 
   const handleNavClick = (page: string) => {
@@ -158,91 +101,10 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const profilChildren = navItems.find(n => n.label === 'Profil')?.children || [];
-  const spmeChildren = navItems.find(n => n.label === 'SPME')?.children || [];
-  const spmiChildren = navItems.find(n => n.label === 'SPMI')?.children || [];
-  const bkdChildren = (navItems.find(n => n.label === 'BKD Online')?.children || []).map(c => ({ ...c, external: true }));
-
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-gray-800">
 
-      {/* Top Bar */}
-      <div className={`bg-sky-600 text-white px-4 text-xs md:text-sm shadow-sm relative z-20 transition-all duration-300 ${isScrolled ? 'h-0 py-0 overflow-hidden opacity-0' : 'py-2 opacity-100'}`}>
-        <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <span className="flex items-center bg-sky-700 px-3 py-1 rounded-full text-sky-100 shadow-inner">
-              <Clock className="w-4 h-4 mr-2 text-yellow-300" /> {currentTime} | Rabu, 15 April 2026
-            </span>
-          </div>
-          <div className="flex items-center space-x-6 mt-3 md:mt-0 font-medium">
-            <a href="#" className="hover:text-yellow-300 transition flex items-center"><Target className="w-4 h-4 mr-1"/> Alumni</a>
-            <a href="#" className="hover:text-yellow-300 transition flex items-center"><Award className="w-4 h-4 mr-1"/> Karir</a>
-            <a href="http://www.radenfatah.ac.id" target="_blank" rel="noopener noreferrer" className="hover:text-yellow-300 transition flex items-center"><Globe className="w-4 h-4 mr-1"/> Web Utama UIN</a>
-          </div>
-        </div>
-      </div>
 
-      {/* Header */}
-      <header className={`bg-white sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-lg py-2' : 'shadow-md py-4'}`}>
-        <div className="container mx-auto px-4 flex justify-between items-center">
-          <div
-            className="flex items-center space-x-4 cursor-pointer group"
-            onClick={() => handleNavClick('Beranda')}
-          >
-            <div className={`bg-gradient-to-br from-sky-500 to-sky-700 rounded-full flex items-center justify-center text-white font-bold shadow-lg transform group-hover:scale-105 transition-all duration-300 ${isScrolled ? 'w-10 h-10 text-sm' : 'w-14 h-14 text-xl'}`}>
-              UIN
-            </div>
-            <div>
-              <h1 className={`font-extrabold text-sky-900 tracking-tight leading-tight group-hover:text-sky-700 transition-colors ${isScrolled ? 'text-xl md:text-2xl' : 'text-2xl md:text-3xl'}`}>
-                LPM UIN Raden Fatah
-              </h1>
-              <p className={`text-sky-600 font-medium transition-all ${isScrolled ? 'text-xs' : 'text-sm'}`}>
-                Lembaga Penjaminan Mutu Palembang
-              </p>
-            </div>
-          </div>
-
-          {/* Desktop Search */}
-          <div className="hidden lg:flex items-center space-x-4">
-            <div className="relative group">
-              <input
-                type="text"
-                placeholder="Cari berita atau dokumen..."
-                className={`pl-11 pr-4 bg-slate-100 border-none rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:bg-white transition-all shadow-inner ${isScrolled ? 'py-2 w-64' : 'py-2.5 w-72'}`}
-              />
-              <Search className={`w-5 h-5 text-sky-500 absolute left-4 group-focus-within:text-yellow-500 transition-colors ${isScrolled ? 'top-2' : 'top-2.5'}`} />
-            </div>
-          </div>
-
-          {/* Mobile Menu Toggle */}
-          <button
-            className="lg:hidden p-2 text-sky-800 hover:bg-sky-100 rounded-lg transition-colors"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-        </div>
-
-        {/* Navigation Bar */}
-        <nav className="bg-sky-800 text-white hidden lg:block border-t border-sky-700 mt-3 absolute w-full left-0">
-          <div className="container mx-auto px-4 flex space-x-2">
-            <NavItem title="Beranda" active={currentPage === 'Beranda'} onClick={() => handleNavClick('Beranda')} />
-            <NavDropdown title="Profil" items={profilChildren} />
-            <NavDropdown title="SPME" items={spmeChildren} />
-            <NavDropdown title="SPMI" items={spmiChildren} />
-            <a href="http://siami.radenfatah.ac.id/" target="_blank" rel="noopener noreferrer" className="px-5 py-4 text-sm font-bold text-white hover:bg-sky-900 transition-all duration-300 flex items-center border-b-4 border-transparent hover:border-yellow-400">
-              SIAMI <ExternalLink className="w-3 h-3 ml-1" />
-            </a>
-            <NavDropdown title="BKD Online" items={bkdChildren} />
-            <a href="http://cdc.radenfatah.ac.id" target="_blank" rel="noopener noreferrer" className="px-5 py-4 text-sm font-bold text-white hover:bg-sky-900 transition-all duration-300 flex items-center border-b-4 border-transparent hover:border-yellow-400">
-              CDC <ExternalLink className="w-3 h-3 ml-1" />
-            </a>
-            <NavItem title="Galeri Foto" active={currentPage === 'Galeri Foto'} onClick={() => handleNavClick('Galeri Foto')} />
-            <NavItem title="Sertifikat" active={currentPage === 'Sertifikat'} onClick={() => handleNavClick('Sertifikat')} />
-            <NavItem title="Peraturan" active={currentPage === 'Peraturan'} onClick={() => handleNavClick('Peraturan')} />
-          </div>
-        </nav>
-      </header>
 
       {/* Spacer for absolute nav */}
       <div className="h-12 hidden lg:block"></div>
@@ -274,80 +136,7 @@ export default function Home() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="bg-sky-950 text-sky-100 border-t-4 border-yellow-400 mt-10">
-        <div className="container mx-auto px-4 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-            {/* Brand */}
-            <div>
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-sky-900 font-bold text-xl shadow-lg">UIN</div>
-                <h2 className="text-2xl font-bold text-white leading-tight">LPM UIN<br/><span className="text-yellow-400 text-lg">Raden Fatah</span></h2>
-              </div>
-              <p className="text-sm text-sky-300 mb-6 leading-relaxed">
-                Menjadi lembaga penjaminan mutu yang unggul dan berstandar internasional demi mewujudkan UIN Raden Fatah yang bermutu tinggi dan berdaya saing global.
-              </p>
-              <div className="flex space-x-3">
-                <a href="#" className="w-9 h-9 rounded-full bg-sky-800 flex items-center justify-center hover:bg-yellow-400 hover:text-sky-900 hover:-translate-y-1 transition-all shadow-md"><User className="w-4 h-4" /></a>
-                <a href="#" className="w-9 h-9 rounded-full bg-sky-800 flex items-center justify-center hover:bg-yellow-400 hover:text-sky-900 hover:-translate-y-1 transition-all shadow-md"><Rss className="w-4 h-4" /></a>
-                <a href="#" className="w-9 h-9 rounded-full bg-sky-800 flex items-center justify-center hover:bg-yellow-400 hover:text-sky-900 hover:-translate-y-1 transition-all shadow-md"><User className="w-4 h-4" /></a>
-                <a href="#" className="w-9 h-9 rounded-full bg-sky-800 flex items-center justify-center hover:bg-yellow-400 hover:text-sky-900 hover:-translate-y-1 transition-all shadow-md"><Rss className="w-4 h-4" /></a>
-              </div>
-            </div>
 
-            {/* Location */}
-            <div>
-              <h3 className="text-lg font-bold text-white mb-6 flex items-center"><MapPin className="w-5 h-5 mr-2 text-yellow-400" /> Lokasi Kampus</h3>
-              <p className="mb-2 leading-relaxed text-sm text-sky-200">{contactInfo.address}</p>
-              <p className="text-sm text-sky-400 mt-4 border-l-2 border-yellow-400 pl-3">{contactInfo.building}</p>
-            </div>
-
-            {/* Contact */}
-            <div>
-              <h3 className="text-lg font-bold text-white mb-6 flex items-center"><Phone className="w-5 h-5 mr-2 text-yellow-400" /> Kontak Kami</h3>
-              <ul className="space-y-4 text-sm text-sky-200">
-                <li className="flex items-center group">
-                  <div className="w-8 h-8 rounded bg-sky-900 flex items-center justify-center mr-3 group-hover:bg-yellow-400 transition-colors">
-                    <Phone className="w-4 h-4 text-yellow-400 group-hover:text-sky-900 transition-colors" />
-                  </div>
-                  <span className="group-hover:text-white transition-colors">{contactInfo.phone}</span>
-                </li>
-                <li className="flex items-center group">
-                  <div className="w-8 h-8 rounded bg-sky-900 flex items-center justify-center mr-3 group-hover:bg-yellow-400 transition-colors">
-                    <Mail className="w-4 h-4 text-yellow-400 group-hover:text-sky-900 transition-colors" />
-                  </div>
-                  <a href={`mailto:${contactInfo.email}`} className="hover:text-white transition-colors">{contactInfo.email}</a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Quick Links */}
-            <div>
-              <h3 className="text-lg font-bold text-white mb-6">Tautan Penting</h3>
-              <ul className="space-y-3 text-sm">
-                {[
-                  { label: 'Situs Utama UIN Raden Fatah', href: 'http://www.radenfatah.ac.id' },
-                  { label: 'Kementerian Agama RI', href: 'https://kemenag.go.id' },
-                  { label: 'Badan Akreditasi Nasional PT', href: 'https://banpt.or.id' },
-                  { label: 'PDDikti - Kemdikbud', href: 'https://pddikti.kemdikbud.go.id' },
-                ].map((link, idx) => (
-                  <li key={idx}>
-                    <a href={link.href} target="_blank" rel="noopener noreferrer" className="flex items-center text-sky-300 hover:text-yellow-400 transition group">
-                      <ArrowRight className="w-3 h-3 mr-2 text-sky-700 group-hover:text-yellow-400 transition" />
-                      {link.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Copyright */}
-        <div className="bg-[#0b1b36] py-5 text-center text-sm text-sky-400/80 border-t border-sky-900">
-          <p>Copyright PUSTIPD &copy; 2018-2026 Lembaga Penjaminan Mutu UIN Raden Fatah Palembang. All rights reserved.</p>
-        </div>
-      </footer>
     </div>
   );
 }
@@ -461,34 +250,34 @@ function BerandaContent({ onNavigate }: { onNavigate: (page: string) => void }) 
             <h3 className="text-2xl font-black text-sky-900 flex items-center">
               <BookOpen className="w-6 h-6 mr-3 text-sky-500" /> Berita Terkini
             </h3>
-            <button className="text-sm text-sky-700 hover:text-sky-900 font-bold bg-slate-100 hover:bg-yellow-400 px-5 py-2 rounded-full transition-all duration-300 flex items-center">
+            <Link to="/berita" className="text-sm text-sky-700 hover:text-sky-900 font-bold bg-slate-100 hover:bg-yellow-400 px-5 py-2 rounded-full transition-all duration-300 flex items-center">
               Lihat Semua <ArrowRight className="w-4 h-4 ml-1" />
-            </button>
+            </Link>
           </div>
 
           <div className="space-y-6">
             {LATEST_NEWS.map((news) => (
               <div key={news.id} className="group flex flex-col md:flex-row bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-500 border border-slate-100 overflow-hidden transform hover:-translate-y-1">
-                <div className="md:w-2/5 h-56 md:h-auto relative overflow-hidden">
+                <Link to={`/berita/${news.id}`} className="md:w-2/5 h-56 md:h-auto relative overflow-hidden">
                   <img src={news.image} alt={news.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out" />
                   <div className="absolute top-4 left-4 bg-yellow-400 text-sky-900 text-xs font-extrabold px-3 py-1.5 rounded-md shadow-md uppercase tracking-wider">
                     {news.category}
                   </div>
-                </div>
+                </Link>
                 <div className="md:w-3/5 p-6 md:p-8 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center text-xs text-sky-600 mb-3 font-semibold bg-sky-50 inline-block px-2.5 py-1 rounded-md">
                       <Calendar className="w-3.5 h-3.5 mr-1 inline" /> {news.date}
                     </div>
                     <h4 className="text-xl md:text-2xl font-bold text-slate-800 mb-3 group-hover:text-sky-600 transition-colors line-clamp-2 leading-snug">
-                      <a href="#">{news.title}</a>
+                      <Link to={`/berita/${news.id}`}>{news.title}</Link>
                     </h4>
                     <p className="text-slate-600 text-sm line-clamp-3 leading-relaxed">{news.excerpt}</p>
                   </div>
                   <div className="mt-5 pt-4 border-t border-slate-100">
-                    <button className="text-sm font-bold text-sky-600 flex items-center group-hover:text-yellow-600 transition-colors">
+                    <Link to={`/berita/${news.id}`} className="text-sm font-bold text-sky-600 flex items-center group-hover:text-yellow-600 transition-colors">
                       Baca Selengkapnya <ArrowRight className="w-4 h-4 ml-1 transform group-hover:translate-x-2 transition-transform duration-300" />
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -583,10 +372,10 @@ function BerandaContent({ onNavigate }: { onNavigate: (page: string) => void }) 
       <div className="mt-16 text-center">
         <h3 className="text-xl font-bold text-slate-400 uppercase tracking-widest mb-8">Diakui Oleh & Tersertifikasi</h3>
         <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-          <div className="flex items-center space-x-2 font-black text-2xl text-slate-800"><Building className="w-8 h-8"/> BAN-PT</div>
-          <div className="flex items-center space-x-2 font-black text-2xl text-slate-800"><Globe className="w-8 h-8"/> ISO 9001:2015</div>
-          <div className="flex items-center space-x-2 font-black text-2xl text-slate-800"><Building className="w-8 h-8"/> KEMENAG RI</div>
-          <div className="flex items-center space-x-2 font-black text-2xl text-slate-800"><Globe className="w-8 h-8"/> AUN-QA</div>
+          <div className="flex items-center space-x-2 font-black text-2xl text-slate-800"><Building className="w-8 h-8" /> BAN-PT</div>
+          <div className="flex items-center space-x-2 font-black text-2xl text-slate-800"><Globe className="w-8 h-8" /> ISO 9001:2015</div>
+          <div className="flex items-center space-x-2 font-black text-2xl text-slate-800"><Building className="w-8 h-8" /> KEMENAG RI</div>
+          <div className="flex items-center space-x-2 font-black text-2xl text-slate-800"><Globe className="w-8 h-8" /> AUN-QA</div>
         </div>
       </div>
 

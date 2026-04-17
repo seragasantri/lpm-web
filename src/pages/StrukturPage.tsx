@@ -1,17 +1,15 @@
 import { useEffect } from 'react';
-import Layout from '../components/Layout';
 import { Users, Download, ChevronLeft, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function StrukturPage() {
   useEffect(() => { document.title = 'Struktur Organisasi :: LPM UIN Raden Fatah Palembang'; }, []);
   const handleDownload = () => {
-    // Placeholder download handler - replace with actual file URL
     alert('Fitur download akan segera tersedia.');
   };
 
   return (
-    <Layout>
+    <div>
       {/* Page Header */}
       <div className="bg-gradient-to-r from-sky-600 to-sky-700 text-white py-12">
         <div className="max-w-6xl mx-auto px-6">
@@ -74,6 +72,6 @@ export default function StrukturPage() {
           </div>
         </div>
       </div>
-    </Layout>
+    </div>
   );
 }

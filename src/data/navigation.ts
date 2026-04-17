@@ -42,6 +42,7 @@ export const navItems: NavItem[] = [
     ],
   },
   { label: 'CDC', href: 'http://cdc.radenfatah.ac.id', external: true },
+  { label: 'Berita', href: '/berita' },
   { label: 'Galeri Foto', href: '/galeri-foto' },
   { label: 'Sertifikat', href: '/sertifikat' },
   { label: 'Peraturan', href: '/peraturan' },

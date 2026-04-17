@@ -114,7 +114,7 @@ export default function Footer() {
         {/* Copyright */}
         <div className="bg-[#0b1b36] px-4 py-4">
           <div className="text-center text-sm text-sky-400">
-            Copyright PUSTIPD 2018-{currentYear} Lembaga Penjaminan Mutu UIN Raden Fatah Palembang
+            Copyright LPM 2026-{currentYear} Lembaga Penjaminan Mutu UIN Raden Fatah Palembang
           </div>
         </div>
       </div>

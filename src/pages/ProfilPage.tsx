@@ -1,13 +1,32 @@
-import { useEffect } from 'react';
-import Layout from '../components/Layout';
+import { useEffect, useState } from 'react';
 import { ShieldCheck, MapPin, Building, Phone, Mail, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import Layout from '../components/Layout';
+import { getHalaman, getVisiMisi, getKontakData } from '../lib/mockData';
+import type { Halaman, VisiMisiData, KontakData } from '../lib/types';
 import { contactInfo } from '../data/navigation';
 
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim();
+}
 
 export default function ProfilPage() {
   useEffect(() => { document.title = 'Profil LPM :: LPM UIN Raden Fatah Palembang'; }, []);
-  const missions = [
+
+  const [halaman, setHalaman] = useState<Halaman | null>(null);
+  const [visimisi, setVisimisi] = useState<VisiMisiData | null>(null);
+  const [kontak, setKontak] = useState<KontakData | null>(null);
+
+  useEffect(() => {
+    Promise.all([getHalaman(), getVisiMisi(), getKontakData()]).then(([halamanList, vm, kt]) => {
+      const page = halamanList.find(p => p.slug === 'profil');
+      if (page) setHalaman(page);
+      setVisimisi(vm);
+      setKontak(kt);
+    });
+  }, []);
+
+  const missions = visimisi?.misi.map(m => m.deskripsi) ?? [
     'Melaksanakan sistem penjaminan mutu internal secara terencana dan kontinyu dengan mengacu kepada standar nasional dan internasional.',
     'Mengkoordinir dan menyiapkan kegiatan penjaminan mutu eksternal melalui akreditasi, baik di tingkat program studi maupun institusi.',
     'Mengkoordinir dan mengarahkan semua bagian/civitas akademik UIN Raden Fatah untuk memenuhi seluruh aspek standar mutu nasional maupun internasional.',
@@ -15,7 +34,7 @@ export default function ProfilPage() {
   ];
 
   return (
-    <Layout>
+    <>
       {/* Page Header */}
       <div className="bg-gradient-to-r from-sky-600 to-sky-700 text-white py-12">
         <div className="max-w-6xl mx-auto px-6">
@@ -27,14 +46,22 @@ export default function ProfilPage() {
             <span>/</span>
             <span>Profil</span>
             <span>/</span>
-            <span className="text-white font-medium">Profil LPM</span>
+            <span className="text-white font-medium">{halaman?.judul || 'Profil LPM'}</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold">Profil LPM</h1>
+          <h1 className="text-3xl md:text-4xl font-bold">{halaman?.judul || 'Profil LPM'}</h1>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-6xl mx-auto px-6 py-12 space-y-10">
+
+        {/* Dynamic Content from DB */}
+        {halaman?.konten && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm mb-4">
+            <p className="text-slate-700 leading-relaxed text-lg whitespace-pre-wrap">{stripHtml(halaman.konten)}</p>
+          </div>
+        )}
+
         {/* Vision Card */}
         <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-8 text-white shadow-lg">
           <div className="flex items-start gap-4">
@@ -44,7 +71,7 @@ export default function ProfilPage() {
             <div>
               <h2 className="text-xl font-bold mb-2">Visi</h2>
               <p className="text-lg text-blue-50 leading-relaxed">
-                Menjadi Lembaga Penjaminan Mutu yang Unggul dan Bereputasi Internasional
+                {visimisi?.visi ?? 'Menjadi Lembaga Penjaminan Mutu yang Unggul dan Bereputasi Internasional'}
               </p>
             </div>
           </div>
@@ -54,7 +81,7 @@ export default function ProfilPage() {
         <div>
           <h2 className="text-2xl font-bold text-slate-800 mb-6">Misi</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {missions.map((mission, index) => (
+            {(visimisi?.misi ?? missions.map((m, i) => ({ deskripsi: m }))).map((mission, index) => (
               <div
                 key={index}
                 className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow"
@@ -63,7 +90,7 @@ export default function ProfilPage() {
                   <div className="flex-shrink-0 w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center text-slate-900 font-bold text-lg">
                     {index + 1}
                   </div>
-                  <p className="text-slate-700 leading-relaxed pt-1">{mission}</p>
+                  <p className="text-slate-700 leading-relaxed pt-1">{mission.deskripsi ?? mission}</p>
                 </div>
               </div>
             ))}
@@ -80,7 +107,7 @@ export default function ProfilPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-slate-500 mb-1">Alamat</p>
-                <p className="text-slate-700">{contactInfo.address}</p>
+                <p className="text-slate-700">{kontak?.alamat ?? contactInfo.address}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -89,7 +116,7 @@ export default function ProfilPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-slate-500 mb-1">Gedung</p>
-                <p className="text-slate-700">{contactInfo.building}</p>
+                <p className="text-slate-700">{kontak?.gedung ?? contactInfo.building}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -98,7 +125,7 @@ export default function ProfilPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-slate-500 mb-1">Telepon</p>
-                <p className="text-slate-700">{contactInfo.phone}</p>
+                <p className="text-slate-700">{kontak?.telepon ?? contactInfo.phone}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -107,12 +134,12 @@ export default function ProfilPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-slate-500 mb-1">Email</p>
-                <p className="text-slate-700">{contactInfo.email}</p>
+                <p className="text-slate-700">{kontak?.email ?? contactInfo.email}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }
