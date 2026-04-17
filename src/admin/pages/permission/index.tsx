@@ -1,59 +1,80 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import { getPermissions, createPermission, updatePermission, deletePermission, type Permission } from '../../../lib/api';
-import DataTable, { Column } from '../../components/DataTable';
-import { Shield, Plus, X, Loader, Save, FileText } from 'lucide-react';
+import { getPermissions, getRoles, type Permission, type RoleResponse } from '../../../lib/api';
+import DataTable, { type Column } from '../../components/DataTable';
+import { Shield, Eye, FileText } from 'lucide-react';
+
+// Parse permission name: modul_action (e.g., "berita_create" → modul: "Berita", action: "Buat")
+function parsePermissionName(name: string): { modul: string; action: string } {
+  const parts = name.split('_');
+  const action = parts.pop() ?? '';
+  const modul = parts.join(' ');
+
+  const actionMap: Record<string, string> = {
+    create: 'Buat',
+    read: 'Lihat',
+    update: 'Edit',
+    delete: 'Hapus',
+  };
+
+  return {
+    modul: modul.charAt(0).toUpperCase() + modul.slice(1),
+    action: actionMap[action] ?? action,
+  };
+}
+
+// Grouped role colors
+const ROLE_COLORS = [
+  'bg-blue-100 text-blue-700',
+  'bg-green-100 text-green-700',
+  'bg-purple-100 text-purple-700',
+  'bg-red-100 text-red-700',
+  'bg-yellow-100 text-yellow-700',
+  'bg-pink-100 text-pink-700',
+  'bg-teal-100 text-teal-700',
+  'bg-orange-100 text-orange-700',
+];
 
 export default function PermissionIndex() {
   useEffect(() => { document.title = 'Manajemen Permission :: LPM Admin'; }, []);
   const { hasPermission } = useAuth();
 
   const [permissions, setPermissions] = useState<Permission[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editPerm, setEditPerm] = useState<Permission | null>(null);
-  const [form, setForm] = useState({ name: '', aplikasi: '' });
-  const [saving, setSaving] = useState(false);
+  const [roles, setRoles] = useState<RoleResponse[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!hasPermission('user.read')) { setLoading(false); return; }
-    getPermissions().then(data => { setPermissions(data); setLoading(false); });
+    if (!hasPermission('user.read')) return;
+
+    const controller = new AbortController();
+
+    async function load() {
+      setLoading(true);
+      try {
+        const p = await getPermissions();
+        if (controller.signal.aborted) return;
+        setPermissions(p);
+
+        const r = await getRoles();
+        if (controller.signal.aborted) return;
+        setRoles(r);
+      } catch {
+        // ignore
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }
+
+    load();
+    return () => controller.abort();
   }, [hasPermission]);
 
-  const openCreate = () => {
-    setEditPerm(null);
-    setForm({ name: '', aplikasi: '' });
-    setShowModal(true);
-  };
-
-  const openEdit = (p: Permission) => {
-    setEditPerm(p);
-    setForm({ name: p.name, aplikasi: p.aplikasi ?? '' });
-    setShowModal(true);
-  };
-
-  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      if (editPerm) {
-        const updated = await updatePermission(editPerm.id, form);
-        if (updated) setPermissions(prev => prev.map(p => p.id === updated.id ? updated : p));
-      } else {
-        const created = await createPermission(form);
-        setPermissions(prev => [...prev, created]);
-      }
-      setShowModal(false);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async (p: Permission) => {
-    if (!confirm(`Yakin ingin menghapus permission "${p.name}"?`)) return;
-    await deletePermission(p.id);
-    setPermissions(prev => prev.filter(x => x.id !== p.id));
-  };
+  // Get roles that have this permission
+  function getPermRoles(permissionName: string): RoleResponse[] {
+    return roles.filter(role =>
+      role.permissions.some(p => p.name === permissionName)
+    );
+  }
 
   if (!hasPermission('user.read')) return (
     <div className="p-6">
@@ -67,12 +88,18 @@ export default function PermissionIndex() {
 
   const columns: Column<Permission>[] = [
     {
-      key: 'name',
-      label: 'Nama Permission',
+      key: 'modul',
+      label: 'Modul',
       sortable: true,
-      render: (_: unknown, item: Permission) => (
-        <span className="font-semibold text-slate-800">{item.name}</span>
-      ),
+      render: (_: unknown, item: Permission) => {
+        const { modul, action } = parsePermissionName(item.name);
+        return (
+          <div>
+            <div className="font-semibold text-slate-800">{modul}</div>
+            <div className="text-xs text-slate-400 mt-0.5">{action}</div>
+          </div>
+        );
+      },
     },
     {
       key: 'aplikasi',
@@ -80,6 +107,39 @@ export default function PermissionIndex() {
       sortable: true,
       render: (_: unknown, item: Permission) => (
         <span className="text-slate-600">{item.aplikasi ?? '-'}</span>
+      ),
+    },
+    {
+      key: 'roles',
+      label: 'Dipakai oleh Role',
+      sortable: false,
+      render: (_: unknown, item: Permission) => {
+        const permRoles = getPermRoles(item.name);
+        if (permRoles.length === 0) {
+          return <span className="text-slate-400 text-sm">Belum ada role</span>;
+        }
+        return (
+          <div className="flex flex-wrap gap-1">
+            {permRoles.map((role, idx) => (
+              <span
+                key={role.id}
+                className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${ROLE_COLORS[idx % ROLE_COLORS.length]}`}
+              >
+                {role.name}
+              </span>
+            ))}
+          </div>
+        );
+      },
+    },
+    {
+      key: 'actions',
+      label: 'Aksi',
+      sortable: false,
+      render: () => (
+        <button className="p-1.5 text-sky-600 hover:bg-sky-50 rounded-lg transition-colors" title="Lihat Detail">
+          <Eye size={16} />
+        </button>
       ),
     },
   ];
@@ -96,64 +156,16 @@ export default function PermissionIndex() {
             <p className="text-sky-100 text-sm mt-0.5">Kelola izin aplikasi dan modul</p>
           </div>
         </div>
-        {hasPermission('user.create') && (
-          <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-white text-sky-700 rounded-lg text-sm font-bold hover:bg-sky-50 transition-colors shadow">
-            <Plus size={16} /> Tambah Permission
-          </button>
-        )}
       </div>
 
       <DataTable
         columns={columns}
         data={permissions}
-        onEdit={hasPermission('user.update') ? openEdit : undefined}
-        onDelete={hasPermission('user.delete') ? handleDelete : undefined}
         searchable={['name', 'aplikasi']}
         loading={loading}
         emptyMessage="Belum ada data permission."
-        createLabel="Tambah"
-        onCreate={hasPermission('user.create') ? openCreate : undefined}
+        perPage={15}
       />
-
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-            <div className="bg-gradient-to-r from-sky-600 to-sky-700 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">{editPerm ? 'Edit Permission' : 'Tambah Permission'}</h2>
-              <button onClick={() => setShowModal(false)} className="text-white/80 hover:text-white"><X size={20} /></button>
-            </div>
-            <form onSubmit={handleSave} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nama Permission</label>
-                <input
-                  value={form.name}
-                  onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                  required
-                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  placeholder="Contoh: berita_create"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nama Aplikasi</label>
-                <input
-                  value={form.aplikasi}
-                  onChange={e => setForm(p => ({ ...p, aplikasi: e.target.value }))}
-                  required
-                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  placeholder="Contoh: LPM Website"
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">Batal</button>
-                <button type="submit" disabled={saving} className="flex items-center gap-2 px-5 py-2.5 bg-sky-600 text-white rounded-lg text-sm font-semibold hover:bg-sky-700 disabled:opacity-60 transition-colors">
-                  {saving ? <Loader className="w-4 h-4 animate-spin" /> : <Save size={16} />} Simpan
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

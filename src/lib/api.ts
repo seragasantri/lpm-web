@@ -154,4 +154,30 @@ export async function deletePermission(id: number): Promise<void> {
   if (!json.success) throw new Error(json.message);
 }
 
+// Roles
+export interface Role {
+  id: number;
+  name: string;
+  guard_name: string;
+  permissions: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RoleResponse {
+  id: number;
+  name: string;
+  guard_name: string;
+  permissions: Permission[];
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getRoles(): Promise<RoleResponse[]> {
+  const response = await apiFetch('/roles');
+  const json: ApiResponse<RoleResponse[]> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
 export { getToken, getUser, setToken, setUser, clearAuth, apiFetch, API_BASE };
