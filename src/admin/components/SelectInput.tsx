@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export interface SelectInputProps {
   value?: string;
@@ -16,12 +16,13 @@ type TomSelectInstance = {
   destroy: () => void;
   sync: () => void;
   setValue: (v: string) => void;
+  open: () => void;
+  close: () => void;
 };
 
 declare global {
   interface Window {
     TomSelect?: new (el: HTMLSelectElement, opts: Record<string, unknown>) => TomSelectInstance;
-    _tsLoaded?: boolean;
   }
 }
 
@@ -35,18 +36,20 @@ function loadTomSelect(): Promise<boolean> {
 
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js';
-    script.onload = () => { window._tsLoaded = true; resolve(true); };
+    script.onload = () => resolve(true);
     script.onerror = () => resolve(false);
     document.head.appendChild(script);
   });
 }
 
-// Singleton promise — TomSelect loads only once
-let _loadPromise: Promise<boolean> | null = null;
+let loadPromise: Promise<boolean> | null = null;
 function ensureLoaded(): Promise<boolean> {
-  if (!_loadPromise) _loadPromise = loadTomSelect();
-  return _loadPromise;
+  if (!loadPromise) loadPromise = loadTomSelect();
+  return loadPromise;
 }
+
+// Track if TomSelect is currently syncing to prevent dropdown from closing
+let isSyncing = false;
 
 export default function SelectInput({
   value = '',
@@ -62,72 +65,76 @@ export default function SelectInput({
   const selectRef = useRef<HTMLSelectElement>(null);
   const tsRef = useRef<TomSelectInstance | null>(null);
   const onChangeRef = useRef(onChange);
-  const [mountId] = useState(() => Math.random().toString(36).slice(2, 8));
-
-  console.log(`[TS #${mountId}] RENDER name=${name} optionsCount=${options.length}`);
-
-  useEffect(() => {
-    return () => { console.log(`[TS #${mountId}] UNMOUNT name=${name}`); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const optionsRef = useRef(options);
+  const [isReady, setIsReady] = useState(false);
 
   // Keep onChange ref current
   useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
 
-  // Init TomSelect on mount
+  // Track options
+  useEffect(() => { optionsRef.current = options; }, [options]);
+
+  // Init TomSelect once
   useEffect(() => {
-    console.log(`[TS] MOUNT name=${name}, window.TomSelect:`, typeof window.TomSelect);
+    if (!selectRef.current) return;
     ensureLoaded().then((ok) => {
-      console.log(`[TS] loaded, ok=${ok}, selectRef:`, !!selectRef.current, 'TomSelect:', typeof window.TomSelect);
-      if (!ok || !selectRef.current || !window.TomSelect) return;
+      if (!ok || !window.TomSelect || !selectRef.current) return;
+      if ((selectRef.current as unknown as { tomselect?: unknown }).tomselect) return;
 
-      setTimeout(() => {
-        console.log(`[TS] setTimeout, selectRef:`, !!selectRef.current);
-        if (!selectRef.current || !window.TomSelect) return;
-        const el = selectRef.current;
-        console.log(`[TS] el tagName:`, el.tagName, 'hasTS:', !!(el as unknown as { tomselect?: unknown }).tomselect);
-
-        if ((el as unknown as { tomselect?: unknown }).tomselect) {
-          console.log(`[TS] already initialized, SKIP`);
-          return;
-        }
-
-        try {
-          tsRef.current = new window.TomSelect(el, {
-            plugins: ['dropdown_input'],
-            create: false,
-            searchField: ['label'],
-            sortField: [{ field: '$order' }],
-            onChange: (val: unknown) => {
-              if (onChangeRef.current) onChangeRef.current(String(val));
-            },
-          });
-          console.log(`[TS] INIT SUCCESS`);
-        } catch (e) {
-          console.error(`[TS] INIT FAILED:`, e);
-        }
-      }, 50);
+      tsRef.current = new window.TomSelect(selectRef.current, {
+        plugins: ['dropdown_input'],
+        create: false,
+        searchField: ['label'],
+        sortField: [{ field: '$order' }],
+        onChange: (val: unknown) => {
+          if (onChangeRef.current && !isSyncing) {
+            onChangeRef.current(String(val));
+          }
+        },
+      });
+      setIsReady(true);
     });
 
     return () => {
-      console.log(`[TS] CLEANUP name=${name}`);
       if (tsRef.current) {
         try { tsRef.current.destroy(); } catch { }
         tsRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync external value changes
+  // Sync options once when ready
   useEffect(() => {
-    if (!tsRef.current || !selectRef.current) return;
-    if (selectRef.current.value !== value) {
-      try { tsRef.current.setValue(value); } catch { }
-    }
-  }, [value]);
+    if (!isReady || !tsRef.current || !selectRef.current) return;
 
-  const stableOptions = useMemo(() => options, [options]);
+    isSyncing = true;
+    const select = selectRef.current;
+    while (select.firstChild) select.removeChild(select.firstChild);
+
+    if (placeholder) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = placeholder;
+      select.appendChild(opt);
+    }
+
+    optionsRef.current.forEach(opt => {
+      const optEl = document.createElement('option');
+      optEl.value = opt.value;
+      optEl.textContent = opt.label;
+      select.appendChild(optEl);
+    });
+
+    tsRef.current.sync();
+
+    // Restore value after short delay to ensure dropdown is stable
+    setTimeout(() => {
+      if (value && tsRef.current) {
+        try { tsRef.current.setValue(value); } catch { }
+      }
+      isSyncing = false;
+    }, 100);
+  }, [isReady]);
 
   return (
     <>
@@ -176,10 +183,10 @@ export default function SelectInput({
           id={id}
           required={required}
           disabled={disabled}
-          defaultValue={value}
+          value={value}
         >
           <option value="">{placeholder}</option>
-          {stableOptions.map(opt => (
+          {options.map(opt => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>
