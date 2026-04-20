@@ -37,21 +37,27 @@ export default function KategoriIndex() {
     setShowModal(true);
   }
 
+  function handleNamaChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const nama = e.target.value;
+    // Auto-generate slug dari nama hanya saat create baru
+    const slug = !editItem
+      ? nama.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      : form.slug;
+    setForm({ nama, slug });
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!form.nama.trim()) { setError('Nama kategori wajib diisi.'); return; }
-    if (!form.slug.trim()) {
-      setForm(prev => ({ ...prev, slug: prev.nama.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') }));
-    }
 
     setSaving(true);
     setError('');
     try {
+      const finalSlug = form.slug.trim() || form.nama.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       if (editItem) {
-        await updateKategori(editItem.id, form);
+        await updateKategori(editItem.id, { nama: form.nama, slug: finalSlug });
       } else {
-        const slug = form.nama.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        await createKategori({ ...form, slug });
+        await createKategori({ nama: form.nama, slug: finalSlug });
       }
       await loadData();
       setShowModal(false);
@@ -150,7 +156,7 @@ export default function KategoriIndex() {
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nama Kategori <span className="text-red-500">*</span></label>
                 <input
                   value={form.nama}
-                  onChange={e => setForm(prev => ({ ...prev, nama: e.target.value }))}
+                  onChange={handleNamaChange}
                   placeholder="Contoh: Berita Terbaru"
                   className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                   autoFocus
@@ -162,7 +168,7 @@ export default function KategoriIndex() {
                   value={form.slug}
                   onChange={e => setForm(prev => ({ ...prev, slug: e.target.value }))}
                   placeholder="auto-generate dari nama"
-                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50 text-slate-500"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                 />
                 <p className="mt-1 text-xs text-slate-400">Otomatis dibuat dari nama jika kosong.</p>
               </div>

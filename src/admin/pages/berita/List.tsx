@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Rss, Eye, ExternalLink } from 'lucide-react';
+import { FileText, Rss, ExternalLink } from 'lucide-react';
 import DataTable from '../../components/DataTable';
-import type { Berita } from '../../../lib/types';
-import { getBerita, deleteBerita } from '../../../lib/mockData';
+import { getBeritas, deleteBerita, type BeritaResponse } from '../../../lib/api';
 
 const statusColors: Record<string, string> = {
   published: 'bg-green-100 text-green-700',
@@ -21,64 +20,78 @@ const kategoriColors: Record<string, string> = {
 
 export default function BeritaList() {
   useEffect(() => { document.title = 'Manajemen Berita :: LPM Admin'; }, []);
-  const [data, setData] = useState<Berita[]>([]);
-  const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
+  const [data, setData] = useState<BeritaResponse[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    getBerita().then(d => {
-      setData(d);
-      // Load view counts from localStorage
-      const counts: Record<string, number> = {};
-      d.forEach(item => {
-        counts[item.id] = parseInt(localStorage.getItem(`lpm_berita_views_${item.id}`) || '0');
-      });
-      setViewCounts(counts);
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await getBeritas({ per_page: 100 });
+      setData(Array.isArray(result.data) ? result.data : []);
+      setTotal(result.total || 0);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal memuat data');
+    } finally {
       setLoading(false);
-    });
+    }
   }, []);
 
-  const getViews = (id: string) => viewCounts[id] || 0;
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-  async function handleDelete(item: Berita) {
+  async function handleDelete(item: BeritaResponse) {
     if (confirm(`Hapus berita "${item.judul}"?`)) {
-      await deleteBerita(item.id);
-      setData(prev => prev.filter(x => x.id !== item.id));
+      try {
+        await deleteBerita(item.id);
+        setData(prev => prev.filter(x => x.id !== item.id));
+        setTotal(prev => prev - 1);
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Gagal menghapus');
+      }
     }
   }
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
 
   const columns = [
     {
       key: 'judul', label: 'Judul',
-      render: (v: unknown) => <span className="font-semibold text-slate-800">{String(v)}</span>
+      render: (_: unknown, item: BeritaResponse) => <span className="font-semibold text-slate-800">{item.judul}</span>
     },
     {
       key: 'kategori', label: 'Kategori',
-      render: (v: unknown) => {
-        const cat = String(v);
-        return <span className={`px-2 py-1 rounded-md text-xs font-medium ${kategoriColors[cat] || 'bg-slate-100 text-slate-600'}`}>{cat}</span>;
+      render: (_: unknown, item: BeritaResponse) => {
+        const catName = item.kategori?.nama || 'Lainnya';
+        return <span className={`px-2 py-1 rounded-md text-xs font-medium ${kategoriColors[catName] || 'bg-slate-100 text-slate-600'}`}>{catName}</span>;
       }
     },
-    { key: 'tanggal', label: 'Tanggal' },
+    {
+      key: 'tanggal', label: 'Tanggal',
+      render: (_: unknown, item: BeritaResponse) => formatDate(item.tanggal)
+    },
     {
       key: 'status', label: 'Status',
-      render: (v: unknown) => {
-        const s = String(v);
+      render: (_: unknown, item: BeritaResponse) => {
+        const s = item.status;
         return <span className={`px-2 py-1 rounded-md text-xs font-semibold ${statusColors[s] || 'bg-slate-100 text-slate-600'}`}>{s}</span>;
       }
     },
     {
-      key: 'views', label: 'Dilihat',
-      render: (_: unknown, item: Berita) => (
-        <span className="flex items-center gap-1 text-sm text-slate-600 font-medium">
-          <Eye size={14} className="text-slate-400" />
-          {getViews(item.id)}
-        </span>
+      key: 'author', label: 'Author',
+      render: (_: unknown, item: BeritaResponse) => (
+        <span className="text-slate-500 text-sm">{item.author?.username || '-'}</span>
       ),
     },
     {
-      key: 'actions', label: 'Aksi', render: (_: unknown, item: Berita) => (
+      key: 'actions', label: 'Aksi', render: (_: unknown, item: BeritaResponse) => (
         <div className="flex items-center gap-2">
           <a
             href={`/berita/${item.slug}`}
@@ -123,7 +136,7 @@ export default function BeritaList() {
             <div className="bg-white/20 rounded-xl px-5 py-3 text-center">
               <div className="flex items-center gap-2">
                 <Rss size={16} className="text-yellow-300" />
-                <span className="text-3xl font-black text-white">{data.length}</span>
+                <span className="text-3xl font-black text-white">{total}</span>
               </div>
               <p className="text-sky-200 text-xs font-medium mt-1">Total Berita</p>
             </div>
@@ -131,12 +144,21 @@ export default function BeritaList() {
         </div>
       </div>
 
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4 text-red-700">
+          <p className="font-semibold">Error: {error}</p>
+          <button onClick={fetchData} className="mt-2 text-sm underline">Coba lagi</button>
+        </div>
+      )}
+
       <DataTable
         columns={columns}
         data={data}
         loading={loading}
         onCreate={() => navigate('/admin/berita/create')}
-        searchable={['judul', 'kategori']}
+        onEdit={(item) => navigate(`/admin/berita/edit/${item.id}`)}
+        onDelete={handleDelete}
+        searchable={['judul']}
         createLabel="Tambah Berita"
       />
     </div>
