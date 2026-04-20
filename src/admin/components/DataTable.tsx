@@ -27,14 +27,14 @@ interface DataTableProps<T> {
   emptyMessage?: string;
   createLabel?: string;
   loading?: boolean;
-  perPage?: number;
 }
 
 export default function DataTable<T extends { id: string | number }>({
-  columns, data, onEdit, onDelete, onCreate, searchable, filters = [], emptyMessage = 'Belum ada data.', createLabel = 'Tambah', loading, perPage = 10
+  columns, data, onEdit, onDelete, onCreate, searchable, filters = [], emptyMessage = 'Belum ada data.', createLabel = 'Tambah', loading,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
   const [sortKey, setSortKey] = useState('');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [filterValues, setFilterValues] = useState<Record<string, string>>(() =>
@@ -170,7 +170,7 @@ export default function DataTable<T extends { id: string | number }>({
                     </span>
                   </th>
                 ))}
-                {(() => {
+                {(onEdit || onDelete) && (() => {
                   const hasActionsCol = columns.some(c => c.key === 'actions' || c.key === 'Aksi');
                   return !hasActionsCol ? <th className="text-left px-4 py-3 font-semibold text-slate-600 w-32">Aksi</th> : null;
                 })()}
@@ -217,45 +217,60 @@ export default function DataTable<T extends { id: string | number }>({
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="p-4 flex items-center justify-between border-t border-slate-100 text-sm text-slate-500">
-          <span>Menampilkan {(page - 1) * perPage + 1}-{Math.min(page * perPage, sorted.length)} dari {sorted.length}</span>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+      {sorted.length > 0 && (
+        <div className="p-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 text-sm text-slate-500">
+          <div className="flex items-center gap-2">
+            <span>Tampilkan</span>
+            <select
+              value={perPage}
+              onChange={e => { setPerPage(Number(e.target.value)); setPage(1); }}
+              className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-400 cursor-pointer"
             >
-              <ChevronLeft size={16} />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-              .reduce<(number | '...')[]>((acc, p, i, arr) => {
-                if (i > 0 && p - (arr[i - 1]) > 1) acc.push('...');
-                acc.push(p);
-                return acc;
-              }, [])
-              .map((p, i) =>
-                p === '...' ? (
-                  <span key={`ellipsis-${i}`} className="px-2 text-slate-400">...</span>
-                ) : (
-                  <button
-                    key={p}
-                    onClick={() => setPage(p as number)}
-                    className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${p === page ? 'bg-sky-600 text-white' : 'hover:bg-slate-100 text-slate-600'}`}
-                  >
-                    {p}
-                  </button>
-                )
-              )}
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronRight size={16} />
-            </button>
+              {[10, 25, 50, 100].map(n => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+            <span>entri</span>
           </div>
+          <span>Menampilkan {(page - 1) * perPage + 1}-{Math.min(page * perPage, sorted.length)} dari {sorted.length}</span>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                .reduce<(number | '...')[]>((acc, p, i, arr) => {
+                  if (i > 0 && p - (arr[i - 1]) > 1) acc.push('...');
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((p, i) =>
+                  p === '...' ? (
+                    <span key={`ellipsis-${i}`} className="px-2 text-slate-400">...</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p as number)}
+                      className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${p === page ? 'bg-sky-600 text-white' : 'hover:bg-slate-100 text-slate-600'}`}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

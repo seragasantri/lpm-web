@@ -33,18 +33,34 @@ export interface Prodi {
 }
 
 export interface Berita {
-  id: string;
+  id: number;
   judul: string;
   slug: string;
-  kategori: string;
+  kategoris_id: number;
+  kategori: {
+    id: number;
+    nama: string;
+    slug: string;
+  };
   tanggal: string;
   gambar?: string;
-  excerpt: string;
+  excerpt?: string;
   konten: string;
   status: 'draft' | 'published' | 'archived';
-  metaTitle?: string;
-  createdAt: string;
-  updatedAt: string;
+  meta_title?: string;
+  author_id: number;
+  author: {
+    id: number;
+    username: string;
+    email: string;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+// Response types untuk backward compatibility
+export interface BeritaListItem extends Omit<Berita, 'kategori' | 'author'> {
+  kategori: string;
   author: string;
 }
 
