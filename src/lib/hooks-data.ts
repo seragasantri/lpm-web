@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiFetch } from './api';
-import type { ApiResponse } from './api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "./api";
+import type { ApiResponse } from "./api";
 
 // Types
 export interface Kategori {
@@ -21,7 +21,7 @@ export interface Berita {
   gambar: string | null;
   excerpt: string | null;
   konten: string;
-  status: 'draft' | 'published' | 'archived';
+  status: "draft" | "published" | "archived";
   meta_title: string | null;
   author_id: number;
   author?: { username: string };
@@ -66,7 +66,7 @@ export interface Sertifikat {
   id: number;
   prodi_id: number;
   prodi?: { nama_prodi: string; kode_prodi: string };
-  jenjang: 'S1' | 'S2' | 'S3';
+  jenjang: "S1" | "S2" | "S3";
   mulai_aktif: string;
   akhir_aktif: string;
   nilai: string;
@@ -103,7 +103,12 @@ export interface Footer {
   telepon: string;
   email: string;
   partners: { id: number; nama: string; url: string }[];
-  socials: { facebook?: string; twitter?: string; instagram?: string; youtube?: string };
+  socials: {
+    facebook?: string;
+    twitter?: string;
+    instagram?: string;
+    youtube?: string;
+  };
   copyright: string;
 }
 
@@ -142,7 +147,7 @@ async function fetchById<T>(endpoint: string): Promise<T> {
 
 async function createItem<T>(endpoint: string, data: unknown): Promise<T> {
   const response = await apiFetch(endpoint, {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify(data),
   });
   const json: ApiResponse<T> = await response.json();
@@ -152,7 +157,7 @@ async function createItem<T>(endpoint: string, data: unknown): Promise<T> {
 
 async function updateItem<T>(endpoint: string, data: unknown): Promise<T> {
   const response = await apiFetch(endpoint, {
-    method: 'PUT',
+    method: "PUT",
     body: JSON.stringify(data),
   });
   const json: ApiResponse<T> = await response.json();
@@ -161,21 +166,35 @@ async function updateItem<T>(endpoint: string, data: unknown): Promise<T> {
 }
 
 async function deleteItem(endpoint: string): Promise<void> {
-  const response = await apiFetch(endpoint, { method: 'DELETE' });
+  const response = await apiFetch(endpoint, { method: "DELETE" });
   const json: ApiResponse<null> = await response.json();
   if (!json.success) throw new Error(json.message);
 }
 
 // ============ Kategori ============
 export async function getKategori(): Promise<Kategori[]> {
-  return fetchList<Kategori[]>('/kategoris');
+  return fetchList<Kategori[]>("/kategoris");
 }
 
-export async function createKategoriItem(data: { nama: string; slug?: string }): Promise<Kategori> {
-  return createItem<Kategori>('/kategoris', data);
+// Public version for frontend pages (no auth required)
+export async function getKategoriPublic(): Promise<Kategori[]> {
+  const response = await fetch(`${import.meta.env.VITE_API_URL}/public/kategoris`);
+  const json: ApiResponse<Kategori[]> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
 }
 
-export async function updateKategoriItem(id: number, data: { nama: string; slug?: string }): Promise<Kategori> {
+export async function createKategoriItem(data: {
+  nama: string;
+  slug?: string;
+}): Promise<Kategori> {
+  return createItem<Kategori>("/kategoris", data);
+}
+
+export async function updateKategoriItem(
+  id: number,
+  data: { nama: string; slug?: string },
+): Promise<Kategori> {
   return updateItem<Kategori>(`/kategoris/${id}`, data);
 }
 
@@ -185,8 +204,8 @@ export async function deleteKategoriItem(id: number): Promise<void> {
 
 export function useKategoris() {
   return useQuery({
-    queryKey: ['kategoris'],
-    queryFn: () => fetchList<Kategori[]>('/kategoris'),
+    queryKey: ["kategoris"],
+    queryFn: () => fetchList<Kategori[]>("/kategoris"),
   });
 }
 
@@ -194,17 +213,22 @@ export function useCreateKategori() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: { nama: string; slug?: string }) =>
-      createItem<Kategori>('/kategoris', data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['kategoris'] }),
+      createItem<Kategori>("/kategoris", data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["kategoris"] }),
   });
 }
 
 export function useUpdateKategori() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { nama: string; slug?: string } }) =>
-      updateItem<Kategori>(`/kategoris/${id}`, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['kategoris'] }),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: { nama: string; slug?: string };
+    }) => updateItem<Kategori>(`/kategoris/${id}`, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["kategoris"] }),
   });
 }
 
@@ -212,22 +236,22 @@ export function useDeleteKategori() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => deleteItem(`/kategoris/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['kategoris'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["kategoris"] }),
   });
 }
 
 // ============ Berita ============
 export function useBeritas(params?: { status?: string; kategori_id?: number }) {
-  const queryKey = params ? ['beritas', params] : ['beritas'];
+  const queryKey = params ? ["beritas", params] : ["beritas"];
   return useQuery({
     queryKey,
-    queryFn: () => fetchList<Berita[]>('/beritas'),
+    queryFn: () => fetchList<Berita[]>("/beritas"),
   });
 }
 
 export function useBerita(id: number) {
   return useQuery({
-    queryKey: ['berita', id],
+    queryKey: ["berita", id],
     queryFn: () => fetchById<Berita>(`/beritas/${id}`),
     enabled: !!id,
   });
@@ -237,12 +261,17 @@ export function useCreateBerita() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: FormData) =>
-      fetch(`${import.meta.env.VITE_API_URL || 'http://api-lpm.test/api'}/beritas`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('lpm_token')}` },
-        body: data,
-      }).then(r => r.json()),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['beritas'] }),
+      fetch(
+        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/beritas`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("lpm_token")}`,
+          },
+          body: data,
+        },
+      ).then((r) => r.json()),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["beritas"] }),
   });
 }
 
@@ -250,12 +279,17 @@ export function useUpdateBerita() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: FormData }) =>
-      fetch(`${import.meta.env.VITE_API_URL || 'http://api-lpm.test/api'}/beritas/${id}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('lpm_token')}` },
-        body: data,
-      }).then(r => r.json()),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['beritas'] }),
+      fetch(
+        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/beritas/${id}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("lpm_token")}`,
+          },
+          body: data,
+        },
+      ).then((r) => r.json()),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["beritas"] }),
   });
 }
 
@@ -263,23 +297,24 @@ export function useDeleteBerita() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => deleteItem(`/beritas/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['beritas'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["beritas"] }),
   });
 }
 
 export function usePublishBerita() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => updateItem<Berita>(`/beritas/${id}/publish`, {}),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['beritas'] }),
+    mutationFn: (id: number) =>
+      updateItem<Berita>(`/beritas/${id}/publish`, {}),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["beritas"] }),
   });
 }
 
 // ============ Galeri ============
 export function useGaleri() {
   return useQuery({
-    queryKey: ['galeri'],
-    queryFn: () => fetchList<Galeri[]>('/galeris'),
+    queryKey: ["galeri"],
+    queryFn: () => fetchList<Galeri[]>("/galeris"),
   });
 }
 
@@ -287,12 +322,17 @@ export function useCreateGaleri() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: FormData) =>
-      fetch(`${import.meta.env.VITE_API_URL || 'http://api-lpm.test/api'}/galeris`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('lpm_token')}` },
-        body: data,
-      }).then(r => r.json()),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['galeri'] }),
+      fetch(
+        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/galeris`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("lpm_token")}`,
+          },
+          body: data,
+        },
+      ).then((r) => r.json()),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["galeri"] }),
   });
 }
 
@@ -300,12 +340,17 @@ export function useUpdateGaleri() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: FormData }) =>
-      fetch(`${import.meta.env.VITE_API_URL || 'http://api-lpm.test/api'}/galeris/${id}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('lpm_token')}` },
-        body: data,
-      }).then(r => r.json()),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['galeri'] }),
+      fetch(
+        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/galeris/${id}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("lpm_token")}`,
+          },
+          body: data,
+        },
+      ).then((r) => r.json()),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["galeri"] }),
   });
 }
 
@@ -313,15 +358,15 @@ export function useDeleteGaleri() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => deleteItem(`/galeris/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['galeri'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["galeri"] }),
   });
 }
 
 // ============ Downloads ============
 export function useDownloads() {
   return useQuery({
-    queryKey: ['downloads'],
-    queryFn: () => fetchList<DownloadFile[]>('/downloads'),
+    queryKey: ["downloads"],
+    queryFn: () => fetchList<DownloadFile[]>("/downloads"),
   });
 }
 
@@ -329,12 +374,17 @@ export function useCreateDownload() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: FormData) =>
-      fetch(`${import.meta.env.VITE_API_URL || 'http://api-lpm.test/api'}/downloads`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('lpm_token')}` },
-        body: data,
-      }).then(r => r.json()),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['downloads'] }),
+      fetch(
+        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/downloads`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("lpm_token")}`,
+          },
+          body: data,
+        },
+      ).then((r) => r.json()),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["downloads"] }),
   });
 }
 
@@ -342,12 +392,17 @@ export function useUpdateDownload() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: FormData }) =>
-      fetch(`${import.meta.env.VITE_API_URL || 'http://api-lpm.test/api'}/downloads/${id}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('lpm_token')}` },
-        body: data,
-      }).then(r => r.json()),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['downloads'] }),
+      fetch(
+        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/downloads/${id}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("lpm_token")}`,
+          },
+          body: data,
+        },
+      ).then((r) => r.json()),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["downloads"] }),
   });
 }
 
@@ -355,15 +410,15 @@ export function useDeleteDownload() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => deleteItem(`/downloads/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['downloads'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["downloads"] }),
   });
 }
 
 // ============ Staf ============
 export function useStafs() {
   return useQuery({
-    queryKey: ['stafs'],
-    queryFn: () => fetchList<Staf[]>('/stafs'),
+    queryKey: ["stafs"],
+    queryFn: () => fetchList<Staf[]>("/stafs"),
   });
 }
 
@@ -371,12 +426,17 @@ export function useCreateStaf() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: FormData) =>
-      fetch(`${import.meta.env.VITE_API_URL || 'http://api-lpm.test/api'}/stafs`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('lpm_token')}` },
-        body: data,
-      }).then(r => r.json()),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['stafs'] }),
+      fetch(
+        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/stafs`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("lpm_token")}`,
+          },
+          body: data,
+        },
+      ).then((r) => r.json()),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["stafs"] }),
   });
 }
 
@@ -384,12 +444,17 @@ export function useUpdateStaf() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: FormData }) =>
-      fetch(`${import.meta.env.VITE_API_URL || 'http://api-lpm.test/api'}/stafs/${id}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('lpm_token')}` },
-        body: data,
-      }).then(r => r.json()),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['stafs'] }),
+      fetch(
+        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/stafs/${id}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("lpm_token")}`,
+          },
+          body: data,
+        },
+      ).then((r) => r.json()),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["stafs"] }),
   });
 }
 
@@ -397,15 +462,15 @@ export function useDeleteStaf() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => deleteItem(`/stafs/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['stafs'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["stafs"] }),
   });
 }
 
 // ============ Sertifikat ============
 export function useSertifikats() {
   return useQuery({
-    queryKey: ['sertifikats'],
-    queryFn: () => fetchList<Sertifikat[]>('/sertifikats'),
+    queryKey: ["sertifikats"],
+    queryFn: () => fetchList<Sertifikat[]>("/sertifikats"),
   });
 }
 
@@ -413,12 +478,18 @@ export function useCreateSertifikat() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: FormData) =>
-      fetch(`${import.meta.env.VITE_API_URL || 'http://api-lpm.test/api'}/sertifikats`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('lpm_token')}` },
-        body: data,
-      }).then(r => r.json()),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sertifikats'] }),
+      fetch(
+        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/sertifikats`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("lpm_token")}`,
+          },
+          body: data,
+        },
+      ).then((r) => r.json()),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["sertifikats"] }),
   });
 }
 
@@ -426,12 +497,18 @@ export function useUpdateSertifikat() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: FormData }) =>
-      fetch(`${import.meta.env.VITE_API_URL || 'http://api-lpm.test/api'}/sertifikats/${id}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('lpm_token')}` },
-        body: data,
-      }).then(r => r.json()),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sertifikats'] }),
+      fetch(
+        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/sertifikats/${id}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("lpm_token")}`,
+          },
+          body: data,
+        },
+      ).then((r) => r.json()),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["sertifikats"] }),
   });
 }
 
@@ -439,24 +516,26 @@ export function useDeleteSertifikat() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => deleteItem(`/sertifikats/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sertifikats'] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["sertifikats"] }),
   });
 }
 
 // ============ Peraturan ============
 export function usePeraturans() {
   return useQuery({
-    queryKey: ['peraturans'],
-    queryFn: () => fetchList<Peraturan[]>('/peraturans'),
+    queryKey: ["peraturans"],
+    queryFn: () => fetchList<Peraturan[]>("/peraturans"),
   });
 }
 
 export function useCreatePeraturan() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Omit<Peraturan, 'id' | 'created_at' | 'updated_at'>) =>
-      createItem<Peraturan>('/peraturans', data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['peraturans'] }),
+    mutationFn: (data: Omit<Peraturan, "id" | "created_at" | "updated_at">) =>
+      createItem<Peraturan>("/peraturans", data),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["peraturans"] }),
   });
 }
 
@@ -465,7 +544,8 @@ export function useUpdatePeraturan() {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<Peraturan> }) =>
       updateItem<Peraturan>(`/peraturans/${id}`, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['peraturans'] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["peraturans"] }),
   });
 }
 
@@ -473,15 +553,16 @@ export function useDeletePeraturan() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => deleteItem(`/peraturans/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['peraturans'] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["peraturans"] }),
   });
 }
 
 // ============ Poll ============
 export function usePoll() {
   return useQuery({
-    queryKey: ['poll'],
-    queryFn: () => fetchById<Poll>('/poll'),
+    queryKey: ["poll"],
+    queryFn: () => fetchById<Poll>("/poll"),
   });
 }
 
@@ -489,8 +570,8 @@ export function useUpdatePoll() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: { pertanyaan: string; options: string[] }) =>
-      updateItem<Poll>('/poll', data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['poll'] }),
+      updateItem<Poll>("/poll", data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["poll"] }),
   });
 }
 
@@ -499,31 +580,31 @@ export function useVotePoll() {
   return useMutation({
     mutationFn: (optionId: number) =>
       updateItem<Poll>(`/poll/vote/${optionId}`, {}),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['poll'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["poll"] }),
   });
 }
 
 // ============ Footer ============
 export function useFooter() {
   return useQuery({
-    queryKey: ['footer'],
-    queryFn: () => fetchById<Footer>('/footer'),
+    queryKey: ["footer"],
+    queryFn: () => fetchById<Footer>("/footer"),
   });
 }
 
 export function useUpdateFooter() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Footer) => updateItem<Footer>('/footer', data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['footer'] }),
+    mutationFn: (data: Footer) => updateItem<Footer>("/footer", data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["footer"] }),
   });
 }
 
 // ============ Faker (Fakultas) ============
 export function useFakers() {
   return useQuery({
-    queryKey: ['fakers'],
-    queryFn: () => fetchList<Faker[]>('/fakers'),
+    queryKey: ["fakers"],
+    queryFn: () => fetchList<Faker[]>("/fakers"),
   });
 }
 
@@ -531,17 +612,22 @@ export function useCreateFaker() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: { kode_faker: string; nama_faker: string }) =>
-      createItem<Faker>('/fakers', data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['fakers'] }),
+      createItem<Faker>("/fakers", data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["fakers"] }),
   });
 }
 
 export function useUpdateFaker() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { kode_faker: string; nama_faker: string } }) =>
-      updateItem<Faker>(`/fakers/${id}`, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['fakers'] }),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: { kode_faker: string; nama_faker: string };
+    }) => updateItem<Faker>(`/fakers/${id}`, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["fakers"] }),
   });
 }
 
@@ -549,33 +635,41 @@ export function useDeleteFaker() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => deleteItem(`/fakers/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['fakers'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["fakers"] }),
   });
 }
 
 // ============ Prodi ============
 export function useProdis() {
   return useQuery({
-    queryKey: ['prodis'],
-    queryFn: () => fetchList<Prodi[]>('/prodis'),
+    queryKey: ["prodis"],
+    queryFn: () => fetchList<Prodi[]>("/prodis"),
   });
 }
 
 export function useCreateProdi() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { kode_prodi: string; nama_prodi: string; faker_id: number }) =>
-      createItem<Prodi>('/prodis', data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['prodis'] }),
+    mutationFn: (data: {
+      kode_prodi: string;
+      nama_prodi: string;
+      faker_id: number;
+    }) => createItem<Prodi>("/prodis", data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["prodis"] }),
   });
 }
 
 export function useUpdateProdi() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { kode_prodi: string; nama_prodi: string; faker_id: number } }) =>
-      updateItem<Prodi>(`/prodis/${id}`, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['prodis'] }),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: { kode_prodi: string; nama_prodi: string; faker_id: number };
+    }) => updateItem<Prodi>(`/prodis/${id}`, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["prodis"] }),
   });
 }
 
@@ -583,6 +677,6 @@ export function useDeleteProdi() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => deleteItem(`/prodis/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['prodis'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["prodis"] }),
   });
 }

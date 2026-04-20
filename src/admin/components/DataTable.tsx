@@ -171,8 +171,8 @@ export default function DataTable<T extends { id: string | number }>({
                   </th>
                 ))}
                 {(onEdit || onDelete) && (() => {
-                  const hasActionsCol = columns.some(c => c.key === 'actions' || c.key === 'Aksi');
-                  return !hasActionsCol ? <th className="text-left px-4 py-3 font-semibold text-slate-600 w-32">Aksi</th> : null;
+                  const hasActionsCol = columns.some(c => c.key === 'actions');
+                  return hasActionsCol ? null : <th className="text-left px-4 py-3 font-semibold text-slate-600 w-32">Aksi</th>;
                 })()}
               </tr>
             </thead>
@@ -185,6 +185,7 @@ export default function DataTable<T extends { id: string | number }>({
                       {col.render ? col.render((item as Record<string, unknown>)[col.key], item) : String((item as Record<string, unknown>)[col.key] ?? '-')}
                     </td>
                   ))}
+                  {columns.some(c => c.key === 'actions') ? null : (
                   <td className="px-4 py-3">
                     {onEdit || onDelete ? (
                       <div className="flex items-center gap-2">
@@ -209,6 +210,7 @@ export default function DataTable<T extends { id: string | number }>({
                       </div>
                     ) : null}
                   </td>
+                  )}
                 </tr>
               ))}
             </tbody>

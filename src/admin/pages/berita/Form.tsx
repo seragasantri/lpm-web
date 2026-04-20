@@ -49,7 +49,7 @@ export default function BeritaForm({ editId }: Props) {
           slug: b.slug,
           kategoris_id: b.kategoris_id,
           tanggal: b.tanggal,
-          gambar: b.gambar || '',
+          gambar: b.gambar ? `${b.gambar}` : '',
           excerpt: b.excerpt || '',
           konten: b.konten,
           status: b.status,
@@ -78,11 +78,15 @@ export default function BeritaForm({ editId }: Props) {
     e.preventDefault();
     setSaving(true);
     try {
+      const dataToSubmit = {
+        ...form,
+        gambar: form.gambar?.slice(0, 200) || '',
+      };
       if (id) {
         const numId = parseInt(id);
-        await updateBerita(numId, form);
+        await updateBerita(numId, dataToSubmit);
       } else {
-        await createBerita(form);
+        await createBerita(dataToSubmit);
       }
       navigate('/admin/berita');
     } catch (err) {
