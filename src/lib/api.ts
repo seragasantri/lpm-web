@@ -1,42 +1,55 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://api-lpm.test/api';
+const API_BASE = import.meta.env.VITE_API_URL || "https://api-lpm.test/api";
 
 function getToken(): string | null {
-  return localStorage.getItem('lpm_token');
+  return localStorage.getItem("lpm_token");
 }
 
 function getUser(): string | null {
-  return localStorage.getItem('lpm_user');
+  return localStorage.getItem("lpm_user");
 }
 
 function setToken(token: string) {
-  localStorage.setItem('lpm_token', token);
+  localStorage.setItem("lpm_token", token);
 }
 
 function setUser(user: string) {
-  localStorage.setItem('lpm_user', user);
+  localStorage.setItem("lpm_user", user);
 }
 
 function clearAuth() {
-  localStorage.removeItem('lpm_token');
-  localStorage.removeItem('lpm_user');
+  localStorage.removeItem("lpm_token");
+  localStorage.removeItem("lpm_user");
 }
 
-async function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
+async function apiFetch(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<Response> {
   const token = getToken();
-  const lang = localStorage.getItem('language') || 'id';
+  const lang = localStorage.getItem("language") || "id";
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'X-Language': lang,
-    ...(options.headers as Record<string, string> || {}),
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    "X-Language": lang,
+    ...((options.headers as Record<string, string>) || {}),
   };
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers["Authorization"] = `Bearer ${token}`;
   }
 
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers,
   });
+
+  // Handle 401 Unauthorized
+  if (response.status === 401) {
+    clearAuth();
+    // Redirect to login if not already on login page
+    if (!window.location.pathname.includes("/login")) {
+      window.location.href = "/admin/login";
+    }
+  }
 
   return response;
 }
@@ -62,17 +75,20 @@ export interface LoginResponse {
   };
 }
 
-export async function login(username: string, password: string): Promise<LoginResponse> {
+export async function login(
+  username: string,
+  password: string,
+): Promise<LoginResponse> {
   const response = await fetch(`${API_BASE}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
   });
 
   const json: ApiResponse<LoginResponse> = await response.json();
 
   if (!json.success) {
-    throw new Error(json.message || 'Login gagal');
+    throw new Error(json.message || "Login gagal");
   }
 
   // Simpan token dan user (normalized for frontend use)
@@ -80,7 +96,9 @@ export async function login(username: string, password: string): Promise<LoginRe
   const normalizedUser = {
     ...json.data.user,
     isActive: json.data.user.is_active,
-    permissions: (json.data.user.permissions || []).map((p: string) => p.replace(/_/g, '.')),
+    permissions: (json.data.user.permissions || []).map((p: string) =>
+      p.replace(/_/g, "."),
+    ),
   };
   setUser(JSON.stringify(normalizedUser));
 
@@ -89,22 +107,22 @@ export async function login(username: string, password: string): Promise<LoginRe
 
 export async function logout(): Promise<void> {
   try {
-    await apiFetch('/auth/logout', { method: 'POST' });
+    await apiFetch("/auth/logout", { method: "POST" });
   } catch {
     // ignore error
   }
   clearAuth();
 }
 
-export async function getMe(): Promise<LoginResponse['user']> {
-  const response = await apiFetch('/auth/me');
-  const json: ApiResponse<LoginResponse['user']> = await response.json();
+export async function getMe(): Promise<LoginResponse["user"]> {
+  const response = await apiFetch("/auth/me");
+  const json: ApiResponse<LoginResponse["user"]> = await response.json();
   if (!json.success) throw new Error(json.message);
   return json.data;
 }
 
 export async function refreshToken(): Promise<string> {
-  const response = await apiFetch('/auth/refresh', { method: 'POST' });
+  const response = await apiFetch("/auth/refresh", { method: "POST" });
   const json: ApiResponse<{ access_token: string }> = await response.json();
   if (!json.success) throw new Error(json.message);
   const token = json.data.access_token;
@@ -124,15 +142,18 @@ export interface Permission {
 }
 
 export async function getPermissions(): Promise<Permission[]> {
-  const response = await apiFetch('/permissions');
+  const response = await apiFetch("/permissions");
   const json: ApiResponse<Permission[]> = await response.json();
   if (!json.success) throw new Error(json.message);
   return json.data;
 }
 
-export async function createPermission(data: { name: string; aplikasi?: string }): Promise<Permission> {
-  const response = await apiFetch('/permissions', {
-    method: 'POST',
+export async function createPermission(data: {
+  name: string;
+  aplikasi?: string;
+}): Promise<Permission> {
+  const response = await apiFetch("/permissions", {
+    method: "POST",
     body: JSON.stringify(data),
   });
   const json: ApiResponse<Permission> = await response.json();
@@ -140,9 +161,12 @@ export async function createPermission(data: { name: string; aplikasi?: string }
   return json.data;
 }
 
-export async function updatePermission(id: number, data: { name: string; aplikasi?: string }): Promise<Permission> {
+export async function updatePermission(
+  id: number,
+  data: { name: string; aplikasi?: string },
+): Promise<Permission> {
   const response = await apiFetch(`/permissions/${id}`, {
-    method: 'PUT',
+    method: "PUT",
     body: JSON.stringify(data),
   });
   const json: ApiResponse<Permission> = await response.json();
@@ -151,7 +175,7 @@ export async function updatePermission(id: number, data: { name: string; aplikas
 }
 
 export async function deletePermission(id: number): Promise<void> {
-  const response = await apiFetch(`/permissions/${id}`, { method: 'DELETE' });
+  const response = await apiFetch(`/permissions/${id}`, { method: "DELETE" });
   const json: ApiResponse<null> = await response.json();
   if (!json.success) throw new Error(json.message);
 }
@@ -168,14 +192,16 @@ export interface ActivityLog {
 }
 
 export async function getLogs(): Promise<ActivityLog[]> {
-  const response = await apiFetch('/logs');
+  const response = await apiFetch("/logs");
   if (!response.ok) {
-    console.warn('API /logs tidak tersedia, menggunakan mock data');
+    console.warn("API /logs tidak tersedia, menggunakan mock data");
     return getMockLogs();
   }
-  const contentType = response.headers.get('content-type');
-  if (!contentType?.includes('application/json')) {
-    console.warn('API /logs mengembalikan HTML bukan JSON, menggunakan mock data');
+  const contentType = response.headers.get("content-type");
+  if (!contentType?.includes("application/json")) {
+    console.warn(
+      "API /logs mengembalikan HTML bukan JSON, menggunakan mock data",
+    );
     return getMockLogs();
   }
   const json: ApiResponse<ActivityLog[]> = await response.json();
@@ -185,16 +211,56 @@ export async function getLogs(): Promise<ActivityLog[]> {
 
 function getMockLogs(): ActivityLog[] {
   return [
-    { id: 1, user_id: 1, username: 'admin', action: 'LOGIN', module: 'auth', detail: 'User login successful', timestamp: new Date().toISOString() },
-    { id: 2, user_id: 1, username: 'admin', action: 'CREATE', module: 'berita', detail: 'Membuat berita baru: Selamat Datang', timestamp: new Date(Date.now() - 3600000).toISOString() },
-    { id: 3, user_id: 1, username: 'admin', action: 'UPDATE', module: 'berita', detail: 'Mengupdate berita: Struktur Organisasi', timestamp: new Date(Date.now() - 7200000).toISOString() },
-    { id: 4, user_id: 1, username: 'admin', action: 'PUBLISH', module: 'berita', detail: 'Mem-publish berita: GPMP 2026', timestamp: new Date(Date.now() - 10800000).toISOString() },
-    { id: 5, user_id: 1, username: 'admin', action: 'LOGOUT', module: 'auth', detail: 'User logout', timestamp: new Date(Date.now() - 14400000).toISOString() },
+    {
+      id: 1,
+      user_id: 1,
+      username: "admin",
+      action: "LOGIN",
+      module: "auth",
+      detail: "User login successful",
+      timestamp: new Date().toISOString(),
+    },
+    {
+      id: 2,
+      user_id: 1,
+      username: "admin",
+      action: "CREATE",
+      module: "berita",
+      detail: "Membuat berita baru: Selamat Datang",
+      timestamp: new Date(Date.now() - 3600000).toISOString(),
+    },
+    {
+      id: 3,
+      user_id: 1,
+      username: "admin",
+      action: "UPDATE",
+      module: "berita",
+      detail: "Mengupdate berita: Struktur Organisasi",
+      timestamp: new Date(Date.now() - 7200000).toISOString(),
+    },
+    {
+      id: 4,
+      user_id: 1,
+      username: "admin",
+      action: "PUBLISH",
+      module: "berita",
+      detail: "Mem-publish berita: GPMP 2026",
+      timestamp: new Date(Date.now() - 10800000).toISOString(),
+    },
+    {
+      id: 5,
+      user_id: 1,
+      username: "admin",
+      action: "LOGOUT",
+      module: "auth",
+      detail: "User logout",
+      timestamp: new Date(Date.now() - 14400000).toISOString(),
+    },
   ];
 }
 
 export async function clearLogs(): Promise<void> {
-  const response = await apiFetch('/logs', { method: 'DELETE' });
+  const response = await apiFetch("/logs", { method: "DELETE" });
   const json: ApiResponse<null> = await response.json();
   if (!json.success) throw new Error(json.message);
 }
@@ -210,15 +276,18 @@ export interface RoleResponse {
 }
 
 export async function getRoles(): Promise<RoleResponse[]> {
-  const response = await apiFetch('/roles');
+  const response = await apiFetch("/roles");
   const json: ApiResponse<RoleResponse[]> = await response.json();
   if (!json.success) throw new Error(json.message);
   return json.data;
 }
 
-export async function createRole(data: { name: string; permissions: string[] }): Promise<RoleResponse> {
-  const response = await apiFetch('/roles', {
-    method: 'POST',
+export async function createRole(data: {
+  name: string;
+  permissions: string[];
+}): Promise<RoleResponse> {
+  const response = await apiFetch("/roles", {
+    method: "POST",
     body: JSON.stringify(data),
   });
   const json: ApiResponse<RoleResponse> = await response.json();
@@ -226,9 +295,12 @@ export async function createRole(data: { name: string; permissions: string[] }):
   return json.data;
 }
 
-export async function updateRole(id: number, data: { name: string; permissions: string[] }): Promise<RoleResponse> {
+export async function updateRole(
+  id: number,
+  data: { name: string; permissions: string[] },
+): Promise<RoleResponse> {
   const response = await apiFetch(`/roles/${id}`, {
-    method: 'PUT',
+    method: "PUT",
     body: JSON.stringify(data),
   });
   const json: ApiResponse<RoleResponse> = await response.json();
@@ -237,25 +309,28 @@ export async function updateRole(id: number, data: { name: string; permissions: 
 }
 
 export async function deleteRole(id: number): Promise<void> {
-  const response = await apiFetch(`/roles/${id}`, { method: 'DELETE' });
+  const response = await apiFetch(`/roles/${id}`, { method: "DELETE" });
   const json: ApiResponse<null> = await response.json();
   if (!json.success) throw new Error(json.message);
 }
 
 // Settings
 export async function getSettings(): Promise<Record<string, string>> {
-  const response = await apiFetch('/settings');
+  const response = await apiFetch("/settings");
   const json: ApiResponse<Record<string, string>> = await response.json();
   if (!json.success) throw new Error(json.message);
   return json.data;
 }
 
-export async function updateSettings(data: { enabled_languages: string[] }): Promise<{ enabled_languages: string[] }> {
-  const response = await apiFetch('/settings', {
-    method: 'PUT',
+export async function updateSettings(data: {
+  enabled_languages: string[];
+}): Promise<{ enabled_languages: string[] }> {
+  const response = await apiFetch("/settings", {
+    method: "PUT",
     body: JSON.stringify(data),
   });
-  const json: ApiResponse<{ enabled_languages: string[] }> = await response.json();
+  const json: ApiResponse<{ enabled_languages: string[] }> =
+    await response.json();
   if (!json.success) throw new Error(json.message);
   return json.data;
 }
@@ -283,7 +358,7 @@ export interface CreateUserData {
 }
 
 export async function getUsers(): Promise<UserResponse[]> {
-  const response = await apiFetch('/users');
+  const response = await apiFetch("/users");
   const json: ApiResponse<UserResponse[]> = await response.json();
   if (!json.success) throw new Error(json.message);
   return json.data;
@@ -297,8 +372,8 @@ export async function getUserById(id: number): Promise<UserResponse> {
 }
 
 export async function createUser(data: CreateUserData): Promise<UserResponse> {
-  const response = await apiFetch('/users', {
-    method: 'POST',
+  const response = await apiFetch("/users", {
+    method: "POST",
     body: JSON.stringify(data),
   });
   const json: ApiResponse<UserResponse> = await response.json();
@@ -306,9 +381,12 @@ export async function createUser(data: CreateUserData): Promise<UserResponse> {
   return json.data;
 }
 
-export async function updateUser(id: number, data: Partial<CreateUserData>): Promise<UserResponse> {
+export async function updateUser(
+  id: number,
+  data: Partial<CreateUserData>,
+): Promise<UserResponse> {
   const response = await apiFetch(`/users/${id}`, {
-    method: 'PUT',
+    method: "PUT",
     body: JSON.stringify(data),
   });
   const json: ApiResponse<UserResponse> = await response.json();
@@ -317,13 +395,15 @@ export async function updateUser(id: number, data: Partial<CreateUserData>): Pro
 }
 
 export async function deleteUser(id: number): Promise<void> {
-  const response = await apiFetch(`/users/${id}`, { method: 'DELETE' });
+  const response = await apiFetch(`/users/${id}`, { method: "DELETE" });
   const json: ApiResponse<null> = await response.json();
   if (!json.success) throw new Error(json.message);
 }
 
 export async function toggleUserActive(id: number): Promise<UserResponse> {
-  const response = await apiFetch(`/users/${id}/toggle-active`, { method: 'PATCH' });
+  const response = await apiFetch(`/users/${id}/toggle-active`, {
+    method: "PATCH",
+  });
   const json: ApiResponse<UserResponse> = await response.json();
   if (!json.success) throw new Error(json.message);
   return json.data;
@@ -339,23 +419,30 @@ export interface BeritaResponse {
     id: number;
     nama: string;
     slug: string;
+    created_at: string;
+    updated_at: string;
   };
   tanggal: string;
-  gambar?: string;
-  excerpt?: string;
+  gambar: string | null;
+  excerpt: string | null;
   konten: string;
-  status: 'draft' | 'published' | 'archived';
-  meta_title?: string;
+  status: "draft" | "published" | "archived";
+  meta_title: string | null;
   author_id: number;
   author: {
     id: number;
+    name: string;
     username: string;
     email: string;
+    email_verified_at: string | null;
+    is_active: boolean;
+    last_login: string | null;
+    created_at: string;
+    updated_at: string;
   };
   created_at: string;
   updated_at: string;
 }
-
 export interface BeritaListResponse {
   data: BeritaResponse[];
   current_page: number;
@@ -372,7 +459,7 @@ export interface CreateBeritaData {
   gambar?: string;
   excerpt?: string;
   konten: string;
-  status?: 'draft' | 'published' | 'archived';
+  status?: "draft" | "published" | "archived";
   meta_title?: string;
 }
 
@@ -384,16 +471,19 @@ export interface GetBeritasParams {
   kategori_id?: number;
 }
 
-export async function getBeritas(params?: GetBeritasParams): Promise<BeritaListResponse> {
+export async function getBeritas(
+  params?: GetBeritasParams,
+): Promise<BeritaListResponse> {
   const searchParams = new URLSearchParams();
-  if (params?.per_page) searchParams.set('per_page', String(params.per_page));
-  if (params?.page) searchParams.set('page', String(params.page));
-  if (params?.search) searchParams.set('search', params.search);
-  if (params?.status) searchParams.set('status', params.status);
-  if (params?.kategori_id) searchParams.set('kategori_id', String(params.kategori_id));
+  if (params?.per_page) searchParams.set("per_page", String(params.per_page));
+  if (params?.page) searchParams.set("page", String(params.page));
+  if (params?.search) searchParams.set("search", params.search);
+  if (params?.status) searchParams.set("status", params.status);
+  if (params?.kategori_id)
+    searchParams.set("kategori_id", String(params.kategori_id));
 
   const query = searchParams.toString();
-  const response = await apiFetch(`/beritas${query ? `?${query}` : ''}`);
+  const response = await apiFetch(`/beritas${query ? `?${query}` : ""}`);
   const json: ApiResponse<BeritaListResponse> = await response.json();
   if (!json.success) throw new Error(json.message);
   return json.data;
@@ -406,9 +496,11 @@ export async function getBerita(id: number): Promise<BeritaResponse> {
   return json.data;
 }
 
-export async function createBerita(data: CreateBeritaData): Promise<BeritaResponse> {
-  const response = await apiFetch('/beritas', {
-    method: 'POST',
+export async function createBerita(
+  data: CreateBeritaData,
+): Promise<BeritaResponse> {
+  const response = await apiFetch("/beritas", {
+    method: "POST",
     body: JSON.stringify(data),
   });
   const json: ApiResponse<BeritaResponse> = await response.json();
@@ -416,9 +508,12 @@ export async function createBerita(data: CreateBeritaData): Promise<BeritaRespon
   return json.data;
 }
 
-export async function updateBerita(id: number, data: Partial<CreateBeritaData>): Promise<BeritaResponse> {
+export async function updateBerita(
+  id: number,
+  data: Partial<CreateBeritaData>,
+): Promise<BeritaResponse> {
   const response = await apiFetch(`/beritas/${id}`, {
-    method: 'PUT',
+    method: "PUT",
     body: JSON.stringify(data),
   });
   const json: ApiResponse<BeritaResponse> = await response.json();
@@ -427,9 +522,86 @@ export async function updateBerita(id: number, data: Partial<CreateBeritaData>):
 }
 
 export async function deleteBerita(id: number): Promise<void> {
-  const response = await apiFetch(`/beritas/${id}`, { method: 'DELETE' });
+  const response = await apiFetch(`/beritas/${id}`, { method: "DELETE" });
   const json: ApiResponse<null> = await response.json();
   if (!json.success) throw new Error(json.message);
 }
 
-export { getToken, getUser as getStoredUser, setToken, setUser, clearAuth, apiFetch, API_BASE };
+export async function getBeritaBySlug(slug: string): Promise<BeritaResponse> {
+  const response = await fetch(`${API_BASE}/public/beritas/${slug}`);
+  const json: ApiResponse<BeritaResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function getPublicBeritas(params?: GetBeritasParams): Promise<{
+  data: BeritaResponse[];
+  current_page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+}> {
+  const searchParams = new URLSearchParams();
+  if (params?.per_page) searchParams.set("per_page", String(params.per_page));
+  if (params?.page) searchParams.set("page", String(params.page));
+  if (params?.search) searchParams.set("search", params.search);
+  if (params?.status) searchParams.set("status", params.status);
+  if (params?.kategori_id)
+    searchParams.set("kategori_id", String(params.kategori_id));
+
+  const query = searchParams.toString();
+  const response = await fetch(
+    `${API_BASE}/public/beritas${query ? `?${query}` : ""}`,
+  );
+  const json: ApiResponse<{
+    data: BeritaResponse[];
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  }> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export interface UploadResponse {
+  url: string;
+  original_name: string;
+  size: number;
+  mime_type: string;
+}
+
+export async function uploadImage(file: File): Promise<UploadResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const token = getToken();
+  const lang = localStorage.getItem("language") || "id";
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "X-Language": lang,
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE}/upload/image`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  const json: ApiResponse<UploadResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export {
+  getToken,
+  getUser as getStoredUser,
+  setToken,
+  setUser,
+  clearAuth,
+  apiFetch,
+  API_BASE,
+};

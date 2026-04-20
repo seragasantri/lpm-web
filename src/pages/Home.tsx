@@ -6,6 +6,7 @@ import {
   ShieldCheck, Play, Quote, Building, Globe,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getPublicBeritas, type BeritaResponse } from '../lib/api';
 
 const PRAYER_TIMES = [
   { name: 'Imsak', time: '04:33 WIB' },
@@ -15,41 +16,6 @@ const PRAYER_TIMES = [
   { name: 'Ashar', time: '15:20 WIB' },
   { name: 'Maghrib', time: '18:04 WIB' },
   { name: 'Isya', time: '19:13 WIB' },
-];
-
-const LATEST_NEWS = [
-  {
-    id: 1,
-    category: 'Akreditasi',
-    title: 'LPM UIN Raden Fatah Gaungkan Pentingnya Mutu dan Akreditasi dalam Apel Pagi Rektorat',
-    date: '13/04/2026 08:52:24 WIB',
-    image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600&h=400',
-    excerpt: 'Sosialisasi dan penguatan komitmen mutu terus digaungkan di lingkungan UIN Raden Fatah sebagai langkah strategis mencapai akreditasi unggul tingkat internasional.'
-  },
-  {
-    id: 2,
-    category: 'SPMI',
-    title: 'Sinergi LPM dan Senat UIN Raden Fatah dalam Penyempurnaan Dokumen SPMI',
-    date: '13/04/2026 08:38:22 WIB',
-    image: 'https://images.unsplash.com/photo-1577415124269-311110d1078c?auto=format&fit=crop&q=80&w=600&h=400',
-    excerpt: 'Langkah strategis diambil melalui rapat sinergi antara LPM dan jajaran Senat Universitas untuk memastikan standar pendidikan terpenuhi secara konsisten.'
-  },
-  {
-    id: 3,
-    category: 'Inovasi Digital',
-    title: 'Dukung Transformasi Digital, Tim LPM UIN Raden Fatah Ikuti Pelatihan AI Gemini Academy',
-    date: '11/03/2026 13:37:41 WIB',
-    image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&q=80&w=600&h=400',
-    excerpt: 'Adopsi teknologi kecerdasan buatan menjadi fokus utama dalam peningkatan efisiensi penjaminan mutu dan tata kelola dokumen di era digital.'
-  },
-  {
-    id: 4,
-    category: 'Sertifikasi',
-    title: 'Perkuat Profesionalisme Dosen, LPM UIN Raden Fatah Serahkan 104 Sertifikat Serdos PTKI',
-    date: '11/03/2026 11:17:19 WIB',
-    image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=600&h=400',
-    excerpt: 'Sebanyak 104 dosen menerima sertifikat pendidik sebagai bukti profesionalisme dan kompetensi pengajaran di perguruan tinggi keagamaan Islam.'
-  }
 ];
 
 const DOWNLOADS = [
@@ -142,6 +108,33 @@ export default function Home() {
 }
 
 function BerandaContent({ onNavigate }: { onNavigate: (page: string) => void }) {
+  const [latestNews, setLatestNews] = useState<BeritaResponse[]>([]);
+  const [loadingNews, setLoadingNews] = useState(true);
+
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        const result = await getPublicBeritas({ per_page: 4, status: 'published' });
+        const news = Array.isArray(result) ? result : result?.data || [];
+        setLatestNews(news);
+      } catch (err) {
+        console.error('Gagal memuat berita:', err);
+      } finally {
+        setLoadingNews(false);
+      }
+    };
+    fetchNews();
+  }, []);
+
+  const getViews = (id: number) => {
+    return parseInt(localStorage.getItem(`lpm_berita_views_${id}`) || '0');
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
   return (
     <div className="space-y-12">
 
@@ -256,32 +249,46 @@ function BerandaContent({ onNavigate }: { onNavigate: (page: string) => void }) 
           </div>
 
           <div className="space-y-6">
-            {LATEST_NEWS.map((news) => (
-              <div key={news.id} className="group flex flex-col md:flex-row bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-500 border border-slate-100 overflow-hidden transform hover:-translate-y-1">
-                <Link to={`/berita/${news.id}`} className="md:w-2/5 h-56 md:h-auto relative overflow-hidden">
-                  <img src={news.image} alt={news.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out" />
-                  <div className="absolute top-4 left-4 bg-yellow-400 text-sky-900 text-xs font-extrabold px-3 py-1.5 rounded-md shadow-md uppercase tracking-wider">
-                    {news.category}
-                  </div>
-                </Link>
-                <div className="md:w-3/5 p-6 md:p-8 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center text-xs text-sky-600 mb-3 font-semibold bg-sky-50 inline-block px-2.5 py-1 rounded-md">
-                      <Calendar className="w-3.5 h-3.5 mr-1 inline" /> {news.date}
+            {loadingNews ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin w-8 h-8 border-4 border-sky-600 border-t-transparent rounded-full" />
+              </div>
+            ) : latestNews.length === 0 ? (
+              <div className="text-center py-12 text-slate-500">Belum ada berita</div>
+            ) : (
+              latestNews.map((news) => (
+                <div key={news.id} className="group flex flex-col md:flex-row bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-500 border border-slate-100 overflow-hidden transform hover:-translate-y-1 h-[280px]">
+                  <Link to={`/berita/${news.slug}`} className="md:w-2/5 h-full relative overflow-hidden">
+                    {news.gambar ? (
+                      <img src={news.gambar} alt={news.judul} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-sky-100 to-sky-200 flex items-center justify-center">
+                        <BookOpen className="w-16 h-16 text-sky-400" />
+                      </div>
+                    )}
+                    <div className="absolute top-4 left-4 bg-yellow-400 text-sky-900 text-xs font-extrabold px-3 py-1.5 rounded-md shadow-md uppercase tracking-wider">
+                      {news.kategori?.nama || 'Lainnya'}
                     </div>
-                    <h4 className="text-xl md:text-2xl font-bold text-slate-800 mb-3 group-hover:text-sky-600 transition-colors line-clamp-2 leading-snug">
-                      <Link to={`/berita/${news.id}`}>{news.title}</Link>
-                    </h4>
-                    <p className="text-slate-600 text-sm line-clamp-3 leading-relaxed">{news.excerpt}</p>
-                  </div>
-                  <div className="mt-5 pt-4 border-t border-slate-100">
-                    <Link to={`/berita/${news.id}`} className="text-sm font-bold text-sky-600 flex items-center group-hover:text-yellow-600 transition-colors">
-                      Baca Selengkapnya <ArrowRight className="w-4 h-4 ml-1 transform group-hover:translate-x-2 transition-transform duration-300" />
-                    </Link>
+                  </Link>
+                  <div className="md:w-3/5 p-6 md:p-8 flex flex-col justify-between h-full overflow-hidden">
+                    <div>
+                      <div className="flex items-center text-xs text-sky-600 mb-3 font-semibold bg-sky-50 inline-block px-2.5 py-1 rounded-md">
+                        <Calendar className="w-3.5 h-3.5 mr-1 inline" /> {formatDate(news.tanggal)} • {getViews(news.id)} dilihat
+                      </div>
+                      <h4 className="text-xl md:text-2xl font-bold text-slate-800 mb-3 group-hover:text-sky-600 transition-colors line-clamp-2 leading-snug">
+                        <Link to={`/berita/${news.slug}`}>{news.judul}</Link>
+                      </h4>
+                      <p className="text-slate-600 text-sm line-clamp-3 leading-relaxed">{news.excerpt || 'Tidak ada ringkasan'}</p>
+                    </div>
+                    <div className="pt-4 border-t border-slate-100 flex-shrink-0">
+                      <Link to={`/berita/${news.slug}`} className="text-sm font-bold text-sky-600 flex items-center group-hover:text-yellow-600 transition-colors">
+                        Baca Selengkapnya <ArrowRight className="w-4 h-4 ml-1 transform group-hover:translate-x-2 transition-transform duration-300" />
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 

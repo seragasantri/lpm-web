@@ -11,6 +11,7 @@ import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, Heading1, Heading2, Heading3, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, AlignJustify, Link as LinkIcon, Image as ImageIcon, Table as TableIcon, Undo, Redo, Minus, Quote } from 'lucide-react';
+import { uploadImage } from '../../lib/api';
 
 interface RichEditorProps {
   value?: string;
@@ -76,13 +77,13 @@ export default function RichEditor({
 
         event.preventDefault();
 
-        images.forEach((file) => {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const url = e.target?.result as string;
-            editor?.chain().focus().setImage({ src: url }).run();
-          };
-          reader.readAsDataURL(file);
+        images.forEach(async (file) => {
+          try {
+            const result = await uploadImage(file);
+            editor?.chain().focus().setImage({ src: result.url }).run();
+          } catch (err) {
+            console.error('Gagal upload gambar:', err);
+          }
         });
 
         return true;
@@ -94,15 +95,15 @@ export default function RichEditor({
           const imageItems = Array.from(items).filter(item => item.type.startsWith('image/'));
           if (imageItems.length > 0) {
             event.preventDefault();
-            imageItems.forEach(item => {
+            imageItems.forEach(async (item) => {
               const file = item.getAsFile();
               if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                  const url = e.target?.result as string;
-                  editor?.chain().focus().setImage({ src: url }).run();
-                };
-                reader.readAsDataURL(file);
+                try {
+                  const result = await uploadImage(file);
+                  editor?.chain().focus().setImage({ src: result.url }).run();
+                } catch (err) {
+                  console.error('Gagal upload gambar:', err);
+                }
               }
             });
             return true;
@@ -118,13 +119,13 @@ export default function RichEditor({
 
         event.preventDefault();
 
-        images.forEach((file) => {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const url = e.target?.result as string;
-            editor?.chain().focus().setImage({ src: url }).run();
-          };
-          reader.readAsDataURL(file);
+        images.forEach(async (file) => {
+          try {
+            const result = await uploadImage(file);
+            editor?.chain().focus().setImage({ src: result.url }).run();
+          } catch (err) {
+            console.error('Gagal upload gambar:', err);
+          }
         });
 
         return true;
@@ -139,18 +140,18 @@ export default function RichEditor({
     }
   }, [value, editor]);
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const url = ev.target?.result as string;
-        editor?.chain().focus().setImage({ src: url }).run();
-      };
-      reader.readAsDataURL(file);
-    });
+    for (const file of Array.from(files)) {
+      try {
+        const result = await uploadImage(file);
+        editor?.chain().focus().setImage({ src: result.url }).run();
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Gagal mengunggah gambar.');
+      }
+    }
 
     e.target.value = '';
   }, [editor]);
@@ -465,10 +466,13 @@ export default function RichEditor({
           height: auto;
           border-radius: 0.5rem;
           margin: 0.75rem 0;
-          cursor: nwse-resize;
           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
           transition: box-shadow 0.2s;
           display: block;
+        }
+        .rich-editor-wrapper .ProseMirror img.ProseMirror-selectednode {
+          outline: 2px solid #38bdf8;
+          cursor: nwse-resize;
         }
         .rich-editor-wrapper .ProseMirror img.ProseMirror-selectednode {
           outline: 2px solid #38bdf8;

@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback } from 'react';
 import { Upload, File, Image, X, Loader } from 'lucide-react';
+import { uploadImage } from '../../lib/api';
 
 export interface FileUploadProps {
   value?: string;
@@ -32,23 +33,21 @@ export default function FileUpload({
   const isImage = accept.startsWith('image') || accept.includes('image');
   const hasFile = Boolean(value);
 
-  const handleFile = useCallback((file: File) => {
+  const handleFile = useCallback(async (file: File) => {
     if (!file) return;
     setUploading(true);
+    setPreviewError(false);
 
-    // For demo/mock: convert to base64 data URL
-    // In production, replace with actual upload API call
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const url = e.target?.result as string;
-      setUploading(false);
+    try {
+      const result = await uploadImage(file);
+      const url = result.url;
       onChange?.(url);
-    };
-    reader.onerror = () => {
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal mengunggah file.');
+      setPreviewError(true);
+    } finally {
       setUploading(false);
-      alert('Gagal membaca file.');
-    };
-    reader.readAsDataURL(file);
+    }
   }, [onChange]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {

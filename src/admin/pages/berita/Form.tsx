@@ -6,7 +6,6 @@ import { getBerita, createBerita, updateBerita, type CreateBeritaData } from '..
 import FileUpload from '../../components/FileUpload';
 import RichEditor from '../../components/RichEditor';
 import Textarea from '../../components/Textarea';
-import SelectInput from '../../components/SelectInput';
 
 interface Props {
   editId?: string;
@@ -50,7 +49,7 @@ export default function BeritaForm({ editId }: Props) {
           slug: b.slug,
           kategoris_id: b.kategoris_id,
           tanggal: b.tanggal,
-          gambar: b.gambar || '',
+          gambar: b.gambar ? `${b.gambar}` : '',
           excerpt: b.excerpt || '',
           konten: b.konten,
           status: b.status,
@@ -79,11 +78,15 @@ export default function BeritaForm({ editId }: Props) {
     e.preventDefault();
     setSaving(true);
     try {
+      const dataToSubmit = {
+        ...form,
+        gambar: form.gambar?.slice(0, 200) || '',
+      };
       if (id) {
         const numId = parseInt(id);
-        await updateBerita(numId, form);
+        await updateBerita(numId, dataToSubmit);
       } else {
-        await createBerita(form);
+        await createBerita(dataToSubmit);
       }
       navigate('/admin/berita');
     } catch (err) {
@@ -116,13 +119,18 @@ export default function BeritaForm({ editId }: Props) {
           </div>
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1">Kategori <span className="text-red-500">*</span></label>
-            <SelectInput
+            <select
               name="kategoris_id"
-              value={String(form.kategoris_id)}
-              onChange={(val) => setForm(prev => ({ ...prev, kategoris_id: parseInt(val) }))}
-              options={kategoriList.map(k => ({ value: String(k.id), label: k.nama }))}
-              placeholder="Pilih Kategori"
-            />
+              value={form.kategoris_id || ''}
+              onChange={(e) => setForm(prev => ({ ...prev, kategoris_id: parseInt(e.target.value) || 0 }))}
+              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white"
+              required
+            >
+              <option value="">Pilih Kategori</option>
+              {kategoriList.map(k => (
+                <option key={k.id} value={k.id}>{k.nama}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1">Tanggal</label>
@@ -157,17 +165,16 @@ export default function BeritaForm({ editId }: Props) {
           </div>
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1">Status</label>
-            <SelectInput
+            <select
               name="status"
               value={form.status || 'draft'}
-              onChange={(val) => setForm(prev => ({ ...prev, status: val as 'draft' | 'published' | 'archived' }))}
-              options={[
-                { value: 'draft', label: 'Draft' },
-                { value: 'published', label: 'Published' },
-                { value: 'archived', label: 'Archived' },
-              ]}
-              placeholder="Pilih Status"
-            />
+              onChange={(e) => setForm(prev => ({ ...prev, status: e.target.value as 'draft' | 'published' | 'archived' }))}
+              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white"
+            >
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+              <option value="archived">Archived</option>
+            </select>
           </div>
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1">Slug</label>
