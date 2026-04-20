@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
-import type { Berita } from '../../../lib/types';
-import { getBerita, createBerita, updateBerita } from '../../../lib/mockData';
+import { getKategori } from '../../../lib/hooks-data';
+import { getBerita, createBerita, updateBerita, type CreateBeritaData } from '../../../lib/api';
 import FileUpload from '../../components/FileUpload';
 import RichEditor from '../../components/RichEditor';
 import Textarea from '../../components/Textarea';
@@ -18,30 +18,57 @@ export default function BeritaForm({ editId }: Props) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(!!id);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<Omit<Berita, 'id' | 'createdAt' | 'updatedAt'>>({
-    judul: '', slug: '', kategori: 'Akreditasi', tanggal: '', gambar: '',
-    excerpt: '', konten: '', status: 'draft', metaTitle: '', author: 'admin',
+  const [kategoriList, setKategoriList] = useState<{ id: number; nama: string }[]>([]);
+  const [form, setForm] = useState<CreateBeritaData>({
+    judul: '',
+    slug: '',
+    kategoris_id: 0,
+    tanggal: new Date().toISOString().split('T')[0],
+    gambar: '',
+    excerpt: '',
+    konten: '',
+    status: 'draft',
+    meta_title: '',
   });
 
   useEffect(() => {
+    // Load kategori list
+    getKategori().then(data => {
+      setKategoriList(data);
+      if (data.length > 0 && !form.kategoris_id) {
+        setForm(prev => ({ ...prev, kategoris_id: data[0].id }));
+      }
+    });
+  }, []);
+
+  useEffect(() => {
     if (id) {
-      getBerita().then(list => {
-        const b = list.find(x => x.id === id);
-        if (b) setForm({
-          judul: b.judul, slug: b.slug, kategori: b.kategori, tanggal: b.tanggal,
-          gambar: b.gambar || '', excerpt: b.excerpt, konten: b.konten,
-          status: b.status, metaTitle: b.metaTitle || '', author: b.author,
+      const numId = parseInt(id);
+      getBerita(numId).then(b => {
+        setForm({
+          judul: b.judul,
+          slug: b.slug,
+          kategoris_id: b.kategoris_id,
+          tanggal: b.tanggal,
+          gambar: b.gambar || '',
+          excerpt: b.excerpt || '',
+          konten: b.konten,
+          status: b.status,
+          meta_title: b.meta_title || '',
         });
         setLoading(false);
+      }).catch(() => {
+        alert('Gagal memuat data berita');
+        navigate('/admin/berita');
       });
     }
-  }, [id]);
+  }, [id, navigate]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
     setForm(prev => {
       const updated = { ...prev, [name]: value };
-      if (name === 'judul' && !editId) {
+      if (name === 'judul' && !id) {
         updated.slug = value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       }
       return updated;
@@ -53,13 +80,14 @@ export default function BeritaForm({ editId }: Props) {
     setSaving(true);
     try {
       if (id) {
-        await updateBerita(id, form);
+        const numId = parseInt(id);
+        await updateBerita(numId, form);
       } else {
-        await createBerita(form as Omit<Berita, 'id' | 'createdAt' | 'updatedAt'>);
+        await createBerita(form);
       }
       navigate('/admin/berita');
-    } catch {
-      alert('Gagal menyimpan.');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menyimpan.');
     } finally {
       setSaving(false);
     }
@@ -87,12 +115,12 @@ export default function BeritaForm({ editId }: Props) {
             <input name="judul" value={form.judul} onChange={handleChange} required className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" placeholder="Judul berita..." />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Kategori</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Kategori <span className="text-red-500">*</span></label>
             <SelectInput
-              name="kategori"
-              value={form.kategori}
-              onChange={(val) => setForm(prev => ({ ...prev, kategori: val }))}
-              options={['Akreditasi','SPMI','Inovasi Digital','Sertifikasi','ISO','Lainnya'].map(k => ({ value: k, label: k }))}
+              name="kategoris_id"
+              value={String(form.kategoris_id)}
+              onChange={(val) => setForm(prev => ({ ...prev, kategoris_id: parseInt(val) }))}
+              options={kategoriList.map(k => ({ value: String(k.id), label: k.nama }))}
               placeholder="Pilih Kategori"
             />
           </div>
@@ -103,7 +131,7 @@ export default function BeritaForm({ editId }: Props) {
           <div className="md:col-span-2">
             <FileUpload
               label="Gambar"
-              value={form.gambar}
+              value={form.gambar || ''}
               onChange={(url) => setForm(prev => ({ ...prev, gambar: url }))}
               accept="image/*"
               placeholder="Seret gambar ke sini atau klik untuk memilih"
@@ -113,7 +141,7 @@ export default function BeritaForm({ editId }: Props) {
           <div className="md:col-span-2">
             <Textarea
               label="Excerpt / Ringkasan"
-              value={form.excerpt}
+              value={form.excerpt || ''}
               onChange={(e) => setForm(prev => ({ ...prev, excerpt: e.target.value }))}
               placeholder="Ringkasan berita..."
               rows={2}
@@ -131,8 +159,8 @@ export default function BeritaForm({ editId }: Props) {
             <label className="block text-sm font-semibold text-slate-700 mb-1">Status</label>
             <SelectInput
               name="status"
-              value={form.status}
-              onChange={(val) => setForm(prev => ({ ...prev, status: val as Berita['status'] }))}
+              value={form.status || 'draft'}
+              onChange={(val) => setForm(prev => ({ ...prev, status: val as 'draft' | 'published' | 'archived' }))}
               options={[
                 { value: 'draft', label: 'Draft' },
                 { value: 'published', label: 'Published' },

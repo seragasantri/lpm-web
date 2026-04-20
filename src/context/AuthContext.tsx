@@ -1,13 +1,13 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useCallback, useState } from 'react';
 import type { ReactNode } from 'react';
-import { login, logout, getUser, clearAuth, type LoginResponse } from '../lib/api';
+import { useQueryClient } from '@tanstack/react-query';
+import * as api from '../lib/api';
 
-export interface User {
+interface User {
   id: number;
   username: string;
   email: string;
-  name?: string;
-  isActive: boolean;
+  is_active: boolean;
   roles: string[];
   permissions: string[];
 }
@@ -15,52 +15,62 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: () => void;
   isAuthenticated: boolean;
   hasPermission: (permission: string) => boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function parseStoredUser(): User | null {
-  const stored = getUser();
-  if (!stored) return null;
-  try {
-    return JSON.parse(stored) as User;
-  } catch {
-    return null;
-  }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => parseStoredUser());
+  const queryClient = useQueryClient();
+  const [user, setUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem('lpm_user');
+    return saved ? JSON.parse(saved) : null;
+  });
 
-  const handleLogin = useCallback(async (username: string, password: string) => {
-    const data = await login(username, password);
-    // Normalize permission names: underscore → dot (backend uses underscores, frontend expects dots)
+  const login = useCallback(async (username: string, password: string) => {
+    const response = await api.login(username, password);
+    // Simpan normalized user
     const normalizedUser = {
-      ...data.user,
-      isActive: data.user.is_active,
-      permissions: data.user.permissions.map((p: string) => p.replace(/_/g, '.')),
+      ...response.user,
+      isActive: response.user.is_active,
+      permissions: (response.user.permissions || []).map((p: string) => p.replace(/_/g, '.')),
     };
+    localStorage.setItem('lpm_user', JSON.stringify(normalizedUser));
     setUser(normalizedUser);
-  }, []);
+    queryClient.invalidateQueries({ queryKey: ['me'] });
+  }, [queryClient]);
 
-  const handleLogout = useCallback(async () => {
-    await logout();
+  const logout = useCallback(() => {
+    api.logout();
     setUser(null);
-  }, []);
+    queryClient.clear();
+  }, [queryClient]);
 
   const hasPermission = useCallback((permission: string): boolean => {
     if (!user?.permissions?.length) return false;
-    // exact match
-    if (user.permissions.includes(permission)) return true;
-    // wildcard: berita matches berita.create, berita.read, etc.
+    // Support wildcard matching (e.g., 'spme' matches 'spme.akreditasi.read', 'spme.iso.read', etc.)
+    if (permission.includes('.')) {
+      // Exact or wildcard match
+      if (user.permissions.includes(permission)) return true;
+      const prefix = permission.split('.').slice(0, -1).join('.');
+      return user.permissions.some(p => p.startsWith(prefix + '.'));
+    }
+    // Simple permission key - check if user has any permission starting with this prefix
     return user.permissions.some(p => p === permission || p.startsWith(permission + '.'));
   }, [user]);
 
   return (
-    <AuthContext.Provider value={{ user, login: handleLogin, logout: handleLogout, isAuthenticated: !!user, hasPermission }}>
+    <AuthContext.Provider value={{
+      user,
+      login,
+      logout,
+      isAuthenticated: !!user,
+      hasPermission,
+      isLoading: false,
+    }}>
       {children}
     </AuthContext.Provider>
   );
@@ -68,6 +78,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
   return ctx;
 }
