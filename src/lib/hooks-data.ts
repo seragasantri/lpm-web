@@ -171,6 +171,18 @@ export async function getKategori(): Promise<Kategori[]> {
   return fetchList<Kategori[]>('/kategoris');
 }
 
+export async function createKategoriItem(data: { nama: string; slug?: string }): Promise<Kategori> {
+  return createItem<Kategori>('/kategoris', data);
+}
+
+export async function updateKategoriItem(id: number, data: { nama: string; slug?: string }): Promise<Kategori> {
+  return updateItem<Kategori>(`/kategoris/${id}`, data);
+}
+
+export async function deleteKategoriItem(id: number): Promise<void> {
+  return deleteItem(`/kategoris/${id}`);
+}
+
 export function useKategoris() {
   return useQuery({
     queryKey: ['kategoris'],

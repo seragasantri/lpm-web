@@ -10,11 +10,11 @@ export interface User {
 }
 
 export interface Kategori {
-  id: string;
+  id: number;
   nama: string;
   slug: string;
-  jumlah?: number;
-  createdAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Faker {

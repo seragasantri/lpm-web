@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, X, Loader, CheckCircle, Tag } from 'lucide-react';
 import type { Kategori } from '../../../lib/types';
-import { getKategori, createKategori, updateKategori, deleteKategori } from '../../../lib/mockData';
+import { getKategori, createKategoriItem, updateKategoriItem, deleteKategoriItem } from '../../../lib/hooks-data';
 
 export default function KategoriIndex() {
   const [items, setItems] = useState<Kategori[]>([]);
@@ -11,6 +11,7 @@ export default function KategoriIndex() {
   const [form, setForm] = useState({ nama: '', slug: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -26,6 +27,7 @@ export default function KategoriIndex() {
   function openCreate() {
     setEditItem(null);
     setForm({ nama: '', slug: '' });
+    setSlugManuallyEdited(false);
     setError('');
     setShowModal(true);
   }
@@ -33,17 +35,21 @@ export default function KategoriIndex() {
   function openEdit(item: Kategori) {
     setEditItem(item);
     setForm({ nama: item.nama, slug: item.slug });
+    setSlugManuallyEdited(false);
     setError('');
     setShowModal(true);
   }
 
   function handleNamaChange(e: React.ChangeEvent<HTMLInputElement>) {
     const nama = e.target.value;
-    // Auto-generate slug dari nama hanya saat create baru
-    const slug = !editItem
-      ? nama.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-      : form.slug;
+    const generatedSlug = nama.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const slug = slugManuallyEdited ? form.slug : generatedSlug;
     setForm({ nama, slug });
+  }
+
+  function handleSlugChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setForm(prev => ({ ...prev, slug: e.target.value }));
+    setSlugManuallyEdited(true);
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -55,9 +61,9 @@ export default function KategoriIndex() {
     try {
       const finalSlug = form.slug.trim() || form.nama.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       if (editItem) {
-        await updateKategori(editItem.id, { nama: form.nama, slug: finalSlug });
+        await updateKategoriItem(editItem.id, { nama: form.nama, slug: finalSlug });
       } else {
-        await createKategori({ nama: form.nama, slug: finalSlug });
+        await createKategoriItem({ nama: form.nama, slug: finalSlug });
       }
       await loadData();
       setShowModal(false);
@@ -70,7 +76,7 @@ export default function KategoriIndex() {
 
   async function handleDelete(item: Kategori) {
     if (!confirm(`Yakin ingin menghapus kategori "${item.nama}"?`)) return;
-    await deleteKategori(item.id);
+    await deleteKategoriItem(item.id);
     await loadData();
   }
 
@@ -166,7 +172,7 @@ export default function KategoriIndex() {
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Slug</label>
                 <input
                   value={form.slug}
-                  onChange={e => setForm(prev => ({ ...prev, slug: e.target.value }))}
+                  onChange={handleSlugChange}
                   placeholder="auto-generate dari nama"
                   className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                 />
