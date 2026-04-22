@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Images, Save, AlertCircle } from 'lucide-react';
-import type { Galeri } from '../../../lib/types';
-import { getGaleri, createGaleri, updateGaleri } from '../../../lib/mockData';
+import { getGaleri as getGaleriById, createGaleri, updateGaleri, type CreateGaleriData, getKategoriGaleris, type KategoriGaleriResponse } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
 import SelectInput from '../../components/SelectInput';
 import FileUpload from '../../components/FileUpload';
-
-const KATEGORI_OPTIONS = ['Audit', 'Workshop', 'Pelatihan', 'Lainnya'] as const;
 
 interface GaleriFormProps {
   editId?: string;
@@ -22,13 +19,15 @@ interface FormState {
 
 const EMPTY_FORM: FormState = {
   judul: '',
-  kategori: 'Audit',
+  kategori: '',
   tanggal: new Date().toISOString().slice(0, 10),
   gambar: '',
 };
 
-export default function GaleriForm({ editId }: GaleriFormProps) {
+export default function GaleriForm({ editId: propEditId }: GaleriFormProps) {
   const navigate = useNavigate();
+  const params = useParams<{ id: string }>();
+  const editId = propEditId || params.id;
   const { user } = useAuth();
   const isEdit = Boolean(editId);
 
@@ -37,23 +36,38 @@ export default function GaleriForm({ editId }: GaleriFormProps) {
   const [fetching, setFetching] = useState(isEdit);
   const [error, setError] = useState('');
   const [previewError, setPreviewError] = useState(false);
+  const [kategoriOptions, setKategoriOptions] = useState<KategoriGaleriResponse[]>([]);
+
+  // Load kategori galeri options
+  useEffect(() => {
+    getKategoriGaleris()
+      .then(setKategoriOptions)
+      .catch(() => setKategoriOptions([]));
+  }, []);
 
   useEffect(() => {
     if (!editId) return;
     setFetching(true);
-    getGaleri().then((list) => {
-      const found = list.find((g) => g.id === editId);
-      if (found) {
+    const numId = parseInt(editId);
+    getGaleriById(numId)
+      .then((found) => {
+        // Format tanggal untuk input date (YYYY-MM-DD)
+        let tanggalFormatted = found.tanggal;
+        if (tanggalFormatted) {
+          const date = new Date(tanggalFormatted);
+          if (!isNaN(date.getTime())) {
+            tanggalFormatted = date.toISOString().slice(0, 10);
+          }
+        }
         setForm({
           judul: found.judul,
           kategori: found.kategori,
-          tanggal: found.tanggal,
-          gambar: found.gambar ?? '',
+          tanggal: tanggalFormatted || new Date().toISOString().slice(0, 10),
+          gambar: found.gambar || '',
         });
-      } else {
-        setError('Data galeri tidak ditemukan.');
-      }
-    }).catch(() => setError('Gagal memuat data.')).finally(() => setFetching(false));
+      })
+      .catch(() => setError('Gagal memuat data.'))
+      .finally(() => setFetching(false));
   }, [editId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -67,25 +81,26 @@ export default function GaleriForm({ editId }: GaleriFormProps) {
     setError('');
 
     if (!form.judul.trim()) { setError('Judul wajib diisi.'); return; }
+    if (!form.gambar) { setError('Gambar wajib diupload.'); return; }
     if (!form.tanggal) { setError('Tanggal wajib diisi.'); return; }
 
     setLoading(true);
     try {
-      const payload: Omit<Galeri, 'id' | 'createdAt'> = {
+      const payload: CreateGaleriData = {
         judul: form.judul.trim(),
         kategori: form.kategori,
         tanggal: form.tanggal,
-        gambar: form.gambar.trim(),
+        gambar: form.gambar,
       };
 
       if (isEdit && editId) {
-        await updateGaleri(editId, payload);
+        await updateGaleri(parseInt(editId), payload);
       } else {
         await createGaleri(payload);
       }
       navigate('/admin/galeri');
-    } catch {
-      setError('Terjadi kesalahan. Silakan coba lagi.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Terjadi kesalahan. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
@@ -169,9 +184,14 @@ export default function GaleriForm({ editId }: GaleriFormProps) {
                   name="kategori"
                   value={form.kategori}
                   onChange={(val) => setForm((prev) => ({ ...prev, kategori: val }))}
-                  options={KATEGORI_OPTIONS.map((k) => ({ value: k, label: k }))}
+                  options={kategoriOptions.map((k) => ({ value: k.nama, label: k.nama }))}
                   placeholder="Pilih Kategori"
                 />
+                {kategoriOptions.length === 0 && (
+                  <p className="mt-1 text-xs text-amber-600">
+                    Belum ada kategori. <a href="/admin/galeri/kategori" target="_blank" className="underline hover:text-amber-700">Tambah kategori dulu</a>
+                  </p>
+                )}
               </div>
 
               {/* Tanggal */}

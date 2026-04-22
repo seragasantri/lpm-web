@@ -596,6 +596,142 @@ export async function uploadImage(file: File): Promise<UploadResponse> {
   return json.data;
 }
 
+// ============ Galeri ============
+export interface GaleriResponse {
+  id: number;
+  judul: string;
+  gambar: string;
+  kategori: string;
+  tanggal: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateGaleriData {
+  judul: string;
+  gambar: string;
+  kategori: string;
+  tanggal: string;
+}
+
+export async function getGaleris(params?: {
+  per_page?: number;
+  page?: number;
+  search?: string;
+  kategori?: string;
+}): Promise<{
+  data: GaleriResponse[];
+  current_page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+}> {
+  const searchParams = new URLSearchParams();
+  if (params?.per_page) searchParams.set("per_page", String(params.per_page));
+  if (params?.page) searchParams.set("page", String(params.page));
+  if (params?.search) searchParams.set("search", params.search);
+  if (params?.kategori) searchParams.set("kategori", params.kategori);
+
+  const query = searchParams.toString();
+  const response = await apiFetch(`/galeris${query ? `?${query}` : ""}`);
+  const json: ApiResponse<{
+    data: GaleriResponse[];
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  }> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function getGaleri(id: number): Promise<GaleriResponse> {
+  const response = await apiFetch(`/galeris/${id}`);
+  const json: ApiResponse<GaleriResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function createGaleri(data: CreateGaleriData): Promise<GaleriResponse> {
+  const response = await apiFetch("/galeris", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<GaleriResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function updateGaleri(id: number, data: Partial<CreateGaleriData>): Promise<GaleriResponse> {
+  const response = await apiFetch(`/galeris/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<GaleriResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function getPublicGaleris(params?: { per_page?: number }): Promise<GaleriResponse[]> {
+  const searchParams = new URLSearchParams();
+  if (params?.per_page) searchParams.set("per_page", String(params.per_page));
+
+  const query = searchParams.toString();
+  const response = await fetch(`${API_BASE}/public/galeris${query ? `?${query}` : ""}`);
+  const json: ApiResponse<GaleriResponse[]> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function deleteGaleri(id: number): Promise<void> {
+  const response = await apiFetch(`/galeris/${id}`, { method: "DELETE" });
+  const json: ApiResponse<null> = await response.json();
+  if (!json.success) throw new Error(json.message);
+}
+
+// ============ Kategori Galeri ============
+export interface KategoriGaleriResponse {
+  id: number;
+  nama: string;
+  slug: string;
+  warna: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getKategoriGaleris(): Promise<KategoriGaleriResponse[]> {
+  const response = await apiFetch("/kategori-galeris");
+  const json: ApiResponse<KategoriGaleriResponse[]> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function createKategoriGaleri(data: { nama: string; warna?: string }): Promise<KategoriGaleriResponse> {
+  const response = await apiFetch("/kategori-galeris", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<KategoriGaleriResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function updateKategoriGaleri(id: number, data: { nama: string; warna?: string }): Promise<KategoriGaleriResponse> {
+  const response = await apiFetch(`/kategori-galeris/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<KategoriGaleriResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function deleteKategoriGaleri(id: number): Promise<void> {
+  const response = await apiFetch(`/kategori-galeris/${id}`, { method: "DELETE" });
+  const json: ApiResponse<null> = await response.json();
+  if (!json.success) throw new Error(json.message);
+}
+
 export {
   getToken,
   getUser as getStoredUser,

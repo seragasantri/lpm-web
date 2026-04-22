@@ -60,7 +60,13 @@ const navItems: NavItem[] = [
       { label: 'Kategori', to: '/admin/kategori', icon: Tag },
     ]
   },
-  { label: 'Galeri', to: '/admin/galeri', icon: Image, permissionKey: 'galeri' },
+  { label: 'Galeri', icon: Image, permissionKey: 'galeri',
+    submenu: [
+      { label: 'Daftar Galeri', to: '/admin/galeri', icon: List },
+      { label: 'Tambah Galeri', to: '/admin/galeri/create', icon: Plus },
+      { label: 'Kategori', to: '/admin/galeri/kategori', icon: Tag },
+    ]
+  },
   { label: 'Download', to: '/admin/download', icon: Download, permissionKey: 'download' },
   { label: 'Halaman Statis', to: '/admin/halaman', icon: ScrollText, permissionKey: 'halaman' },
   {

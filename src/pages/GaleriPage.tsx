@@ -1,113 +1,73 @@
-import { useEffect } from 'react';
-import React, { useState } from 'react';
-import { X, ChevronLeft, ChevronRight, Camera } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { X, ChevronLeft, ChevronRight, Camera, Loader } from 'lucide-react';
+import { getPublicGaleris, type GaleriResponse } from '../lib/api';
 
-interface Photo {
-  id: number;
-  src: string;
-  caption: string;
-  date: string;
-  category: 'Audit' | 'Workshop' | 'Pelatihan';
-}
+const API_FILE = import.meta.env.VITE_API_FILE || 'https://api-lpm.test';
 
-const photos: Photo[] = [
-  {
-    id: 1,
-    src: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=400&h=300&fit=crop',
-    caption: 'Pelatihan Audit Mutu Internal',
-    date: '15 Maret 2025',
-    category: 'Pelatihan',
-  },
-  {
-    id: 2,
-    src: 'https://images.unsplash.com/photo-1562774053-701939374585?w=400&h=300&fit=crop',
-    caption: 'Workshop Penjaminan Mutu',
-    date: '22 April 2025',
-    category: 'Workshop',
-  },
-  {
-    id: 3,
-    src: 'https://images.unsplash.com/photo-1577415124269-311110d1078c?w=400&h=300&fit=crop',
-    caption: 'Auditor Meeting Session',
-    date: '10 Mei 2025',
-    category: 'Audit',
-  },
-  {
-    id: 4,
-    src: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=400&h=300&fit=crop',
-    caption: 'Sosialisasi SPMI ke Prodi',
-    date: '5 Juni 2025',
-    category: 'Workshop',
-  },
-  {
-    id: 5,
-    src: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop',
-    caption: 'Evaluasi Diri Program Studi',
-    date: '18 Juni 2025',
-    category: 'Audit',
-  },
-  {
-    id: 6,
-    src: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=400&h=300&fit=crop',
-    caption: 'Pelatihan Auditor AMI 2025',
-    date: '2 Juli 2025',
-    category: 'Pelatihan',
-  },
-  {
-    id: 7,
-    src: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop',
-    caption: 'Rapat Koordinasi LPMP',
-    date: '14 Agustus 2025',
-    category: 'Workshop',
-  },
-  {
-    id: 8,
-    src: 'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=400&h=300&fit=crop',
-    caption: 'Visitasi Akreditasi Prodi',
-    date: '28 Agustus 2025',
-    category: 'Audit',
-  },
-  {
-    id: 9,
-    src: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=400&h=300&fit=crop',
-    caption: 'Bimtek SPMI Dosen',
-    date: '5 September 2025',
-    category: 'Pelatihan',
-  },
-  {
-    id: 10,
-    src: 'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?w=400&h=300&fit=crop',
-    caption: 'Workshop Menyusun Instrumen AMI',
-    date: '20 September 2025',
-    category: 'Workshop',
-  },
-  {
-    id: 11,
-    src: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=400&h=300&fit=crop',
-    caption: 'Audit Mutu Eksternal',
-    date: '7 Oktober 2025',
-    category: 'Audit',
-  },
-  {
-    id: 12,
-    src: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=400&h=300&fit=crop',
-    caption: 'Pelatihan Evaluasi Diri',
-    date: '25 Oktober 2025',
-    category: 'Pelatihan',
-  },
-];
-
-const categories = ['All', 'Audit', 'Workshop', 'Pelatihan'] as const;
+const KATEGORI_COLORS: Record<string, string> = {
+  Audit: 'bg-blue-500',
+  Workshop: 'bg-green-500',
+  Pelatihan: 'bg-amber-500',
+  Lainnya: 'bg-slate-500',
+};
 
 export default function GaleriPage() {
   useEffect(() => { document.title = 'Galeri Foto :: LPM UIN Raden Fatah Palembang'; }, []);
-  const [activeCategory, setActiveCategory] = useState<'All' | 'Audit' | 'Workshop' | 'Pelatihan'>('All');
+
+  const [photos, setPhotos] = useState<GaleriResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<string>('All');
+  const [categories, setCategories] = useState<string[]>([]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch galeri photos
+  useEffect(() => {
+    async function fetchPhotos() {
+      try {
+        const data = await getPublicGaleris({ per_page: 100 });
+        setPhotos(data || []);
+
+        // Extract unique categories
+        const uniqueCategories = [...new Set((data || []).map((p) => p.kategori))];
+        setCategories(['All', ...uniqueCategories]);
+      } catch (err) {
+        console.error('GaleriPage: Error:', err);
+        setError(err instanceof Error ? err.message : 'Gagal mengambil data');
+        setPhotos([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchPhotos();
+  }, []);
 
   const filteredPhotos = activeCategory === 'All'
     ? photos
-    : photos.filter((p) => p.category === activeCategory);
+    : photos.filter((p) => p.kategori === activeCategory);
+
+  const getImageUrl = (path: string) => {
+    if (!path) return '';
+    // Jika sudah full URL, gunakan langsung
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path.replace(/\\/g, '');
+    }
+    // Jika hanya path, gabungkan dengan base URL
+    return `${API_FILE}${path}`;
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
 
   const openLightbox = (index: number) => {
     setCurrentIndex(index);
@@ -131,6 +91,31 @@ export default function GaleriPage() {
     if (e.key === 'ArrowLeft') prevPhoto();
     if (e.key === 'ArrowRight') nextPhoto();
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader className="w-8 h-8 animate-spin text-sky-600" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <Camera size={48} className="mx-auto text-red-300 mb-3" />
+          <p className="text-red-500 font-medium">Error: {error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-sky-600 text-white rounded-lg text-sm"
+          >
+            Refresh Halaman
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -161,42 +146,46 @@ export default function GaleriPage() {
         </div>
 
         {/* Photo Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredPhotos.map((photo, index) => (
-            <div
-              key={photo.id}
-              className="group relative overflow-hidden rounded-xl cursor-pointer bg-slate-200 aspect-[4/3]"
-              onClick={() => openLightbox(index)}
-            >
-              <img
-                src={photo.src}
-                alt={photo.caption}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-              {/* Hover Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-4">
-                <span className="text-sky-300 text-xs font-medium mb-1">{photo.category}</span>
-                <p className="text-white font-semibold text-sm">{photo.caption}</p>
-                <p className="text-slate-300 text-xs mt-0.5">{photo.date}</p>
+        {filteredPhotos.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredPhotos.map((photo, index) => (
+              <div
+                key={photo.id}
+                className="group relative overflow-hidden rounded-xl cursor-pointer bg-slate-200 aspect-[4/3]"
+                onClick={() => openLightbox(index)}
+              >
+                <img
+                  src={getImageUrl(photo.gambar)}
+                  alt={photo.judul}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
+                  }}
+                />
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-4">
+                  <span className={`${KATEGORI_COLORS[photo.kategori] || 'bg-slate-500'} text-white text-xs font-medium px-2 py-0.5 rounded mb-2 w-fit`}>
+                    {photo.kategori}
+                  </span>
+                  <p className="text-white font-semibold text-sm">{photo.judul}</p>
+                  <p className="text-slate-300 text-xs mt-0.5">{formatDate(photo.tanggal)}</p>
+                </div>
+                <div className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera size={14} className="text-slate-700" />
+                </div>
               </div>
-              <div className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Camera size={14} className="text-slate-700" />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {filteredPhotos.length === 0 && (
+            ))}
+          </div>
+        ) : (
           <div className="text-center py-16">
             <Camera size={48} className="mx-auto text-slate-300 mb-3" />
-            <p className="text-slate-400 font-medium">Tidak ada foto dalam kategori ini</p>
+            <p className="text-slate-400 font-medium">Belum ada foto galeri</p>
           </div>
         )}
       </div>
 
       {/* Lightbox */}
-      {lightboxOpen && (
+      {lightboxOpen && filteredPhotos.length > 0 && (
         <div
           className="fixed inset-0 z-50 bg-slate-900/95 flex items-center justify-center"
           onKeyDown={handleKeyDown}
@@ -223,19 +212,22 @@ export default function GaleriPage() {
           {/* Image */}
           <div className="max-w-4xl w-full mx-4 relative">
             <img
-              src={filteredPhotos[currentIndex].src.replace('w=400&h=300', 'w=1200&h=800')}
-              alt={filteredPhotos[currentIndex].caption}
+              src={getImageUrl(filteredPhotos[currentIndex].gambar)}
+              alt={filteredPhotos[currentIndex].judul}
               className="w-full max-h-[75vh] object-contain rounded-xl"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/800x600?text=No+Image';
+              }}
             />
             <div className="mt-4 text-center">
-              <span className="text-sky-300 text-sm font-medium">
-                {filteredPhotos[currentIndex].category}
+              <span className={`${KATEGORI_COLORS[filteredPhotos[currentIndex].kategori] || 'bg-slate-500'} text-white text-sm font-medium px-2 py-0.5 rounded`}>
+                {filteredPhotos[currentIndex].kategori}
               </span>
-              <h3 className="text-white font-semibold text-lg mt-1">
-                {filteredPhotos[currentIndex].caption}
+              <h3 className="text-white font-semibold text-lg mt-2">
+                {filteredPhotos[currentIndex].judul}
               </h3>
-              <p className="text-slate-400 text-sm mt-0.5">{filteredPhotos[currentIndex].date}</p>
-              <p className="text-slate-500 text-xs mt-1">
+              <p className="text-slate-400 text-sm mt-1">{formatDate(filteredPhotos[currentIndex].tanggal)}</p>
+              <p className="text-slate-500 text-xs mt-2">
                 {currentIndex + 1} / {filteredPhotos.length}
               </p>
             </div>

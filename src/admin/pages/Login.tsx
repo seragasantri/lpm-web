@@ -14,7 +14,7 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const saved = localStorage.getItem('lpm_admin_session');
+    const saved = localStorage.getItem('lpm_user');
     if (saved) {
       navigate('/admin', { replace: true });
     }

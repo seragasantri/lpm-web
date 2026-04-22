@@ -27,6 +27,7 @@ import BeritaEdit from './admin/pages/berita/edit/[id]';
 import GaleriList from './admin/pages/galeri/List';
 import GaleriCreate from './admin/pages/galeri/create';
 import GaleriEdit from './admin/pages/galeri/Edit';
+import KategoriGaleriIndex from './admin/pages/galeri/kategori/index';
 import DownloadList from './admin/pages/download/List';
 import DownloadCreate from './admin/pages/download/create';
 import DownloadEdit from './admin/pages/download/Edit';
@@ -116,6 +117,7 @@ export default function App() {
           <Route path="galeri" element={<GaleriList />} />
           <Route path="galeri/create" element={<GaleriCreate />} />
           <Route path="galeri/edit/:id" element={<GaleriEdit />} />
+          <Route path="galeri/kategori" element={<KategoriGaleriIndex />} />
           <Route path="download" element={<DownloadList />} />
           <Route path="download/create" element={<DownloadCreate />} />
           <Route path="download/edit/:id" element={<DownloadEdit />} />
