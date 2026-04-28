@@ -29,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem('lpm_user');
     return saved ? JSON.parse(saved) : null;
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const login = useCallback(async (username: string, password: string) => {
     const response = await api.login(username, password);
@@ -50,7 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient]);
 
   const hasPermission = useCallback((permission: string): boolean => {
-    if (!user?.permissions?.length) return false;
+    if (!user) return false;
+
+    // Super Admin has access to everything
+    if (user.roles?.includes('Super Admin') || user.roles?.includes('super_admin') || user.roles?.includes('admin')) {
+      return true;
+    }
+
+    if (!user.permissions?.length) return false;
     // Support wildcard matching (e.g., 'spme' matches 'spme.akreditasi.read', 'spme.iso.read', etc.)
     if (permission.includes('.')) {
       // Exact or wildcard match
@@ -69,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       isAuthenticated: !!user,
       hasPermission,
-      isLoading: false,
+      isLoading,
     }}>
       {children}
     </AuthContext.Provider>

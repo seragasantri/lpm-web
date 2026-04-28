@@ -16,7 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Tag,
+  Tag as TagIcon,
   Plus,
   List,
   Building2,
@@ -33,6 +33,8 @@ import {
   MapPin,
   ClipboardCheck,
   BookText,
+  Monitor,
+  Link,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -45,7 +47,7 @@ interface SubMenuItem {
 interface NavItem {
   label: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
-  permissionKey: 'dashboard' | 'berita' | 'galeri' | 'download' | 'halaman' | 'struktur' | 'staf' | 'sertifikat' | 'peraturan' | 'poll' | 'footer' | 'user' | 'log' | 'kategori' | 'faker' | 'prodi' | 'spme' | 'profil' | 'spmi';
+  permissionKey: 'dashboard' | 'berita' | 'galeri' | 'download' | 'halaman' | 'struktur' | 'staf' | 'sertifikat' | 'peraturan' | 'poll' | 'footer' | 'user' | 'log' | 'kategori' | 'tag' | 'faker' | 'prodi' | 'spme' | 'profil' | 'spmi' | 'hero' | 'quick-access' | 'partner';
   to?: string;
   submenu?: SubMenuItem[];
 }
@@ -57,18 +59,19 @@ const navItems: NavItem[] = [
     submenu: [
       { label: 'Semua Berita', to: '/admin/berita', icon: List },
       { label: 'Tambah Berita', to: '/admin/berita/create', icon: Plus },
-      { label: 'Kategori', to: '/admin/kategori', icon: Tag },
+      { label: 'Kategori', to: '/admin/kategori', icon: TagIcon },
+      { label: 'Tag', to: '/admin/tag', icon: TagIcon },
     ]
   },
-  { label: 'Galeri', icon: Image, permissionKey: 'galeri',
+  {
+    label: 'Galeri', icon: Image, permissionKey: 'galeri',
     submenu: [
       { label: 'Daftar Galeri', to: '/admin/galeri', icon: List },
       { label: 'Tambah Galeri', to: '/admin/galeri/create', icon: Plus },
-      { label: 'Kategori', to: '/admin/galeri/kategori', icon: Tag },
+      { label: 'Kategori', to: '/admin/galeri/kategori', icon: TagIcon },
     ]
   },
   { label: 'Download', to: '/admin/download', icon: Download, permissionKey: 'download' },
-  { label: 'Halaman Statis', to: '/admin/halaman', icon: ScrollText, permissionKey: 'halaman' },
   {
     label: 'SPME', icon: FolderOpen, permissionKey: 'spme',
     submenu: [
@@ -94,6 +97,9 @@ const navItems: NavItem[] = [
   { label: 'Fakultas', to: '/admin/faker', icon: Building2, permissionKey: 'berita' },
   { label: 'Prodi', to: '/admin/prodi', icon: BookOpen, permissionKey: 'berita' },
   { label: 'Footer', to: '/admin/footer', icon: Settings, permissionKey: 'footer' },
+  { label: 'Hero', to: '/admin/hero', icon: Monitor, permissionKey: 'hero' },
+  { label: 'Menu Cepat', to: '/admin/quick-access', icon: Link, permissionKey: 'quick-access' },
+  { label: 'Partner', to: '/admin/partner', icon: Building2, permissionKey: 'partner' },
   {
     label: 'Manajemen User', icon: ShieldCheck, permissionKey: 'user',
     submenu: [

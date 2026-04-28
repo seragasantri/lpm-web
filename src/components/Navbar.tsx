@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Search, Menu, X, ChevronDown } from 'lucide-react';
 import { navItems } from '../data/navigation';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useSiteSettings } from '../context/SiteSettingsContext';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,6 +11,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
+  const { settings } = useSiteSettings();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -59,8 +61,8 @@ export default function Navbar() {
           target="_blank"
           rel="noopener noreferrer"
           className={`flex items-center gap-1 px-4 py-3 text-sm font-medium transition-all duration-200 border-b-4 ${active
-              ? 'bg-sky-900 text-yellow-400 border-yellow-400'
-              : 'text-white border-transparent hover:bg-sky-900 hover:text-white'
+            ? 'bg-sky-900 text-yellow-400 border-yellow-400'
+            : 'text-white border-transparent hover:bg-sky-900 hover:text-white'
             }`}
         >
           {item.label}
@@ -72,8 +74,8 @@ export default function Navbar() {
       <Link
         to={item.href || '#'}
         className={`flex items-center gap-1 px-4 py-3 text-sm font-medium transition-all duration-200 border-b-4 ${active
-            ? 'bg-sky-900 text-yellow-400 border-yellow-400'
-            : 'text-white border-transparent hover:bg-sky-900 hover:text-white'
+          ? 'bg-sky-900 text-yellow-400 border-yellow-400'
+          : 'text-white border-transparent hover:bg-sky-900 hover:text-white'
           }`}
       >
         {item.label}
@@ -90,8 +92,8 @@ export default function Navbar() {
         <button
           onClick={() => handleDropdownToggle(item.label)}
           className={`flex items-center gap-1 px-4 py-3 text-sm font-medium transition-all duration-200 border-b-4 w-full ${hasActiveChild
-              ? 'bg-sky-900 text-yellow-400 border-yellow-400'
-              : 'text-white border-transparent hover:bg-sky-900 hover:text-white'
+            ? 'bg-sky-900 text-yellow-400 border-yellow-400'
+            : 'text-white border-transparent hover:bg-sky-900 hover:text-white'
             }`}
         >
           {item.label}
@@ -268,9 +270,17 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between gap-4">
           {/* Brand */}
           <Link to="/" className="flex items-center gap-3 flex-shrink-0">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-400 via-sky-600 to-sky-800 flex items-center justify-center shadow-lg flex-shrink-0">
-              <span className="text-white font-bold text-lg tracking-wide">UIN</span>
-            </div>
+            {settings?.logo_url ? (
+              <img
+                src={settings.logo_url}
+                alt="Logo UIN"
+                className="w-24"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-400 via-sky-600 to-sky-800 flex items-center justify-center shadow-lg flex-shrink-0">
+                <span className="text-white font-bold text-lg tracking-wide">UIN</span>
+              </div>
+            )}
             <div className="flex flex-col">
               <span className="text-white font-bold text-lg leading-tight tracking-wide">
                 LPM UIN Raden Fatah

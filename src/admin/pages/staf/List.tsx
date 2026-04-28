@@ -2,21 +2,21 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, UserCircle2 } from 'lucide-react';
 import DataTable from '../../components/DataTable';
-import type { Staf } from '../../../lib/types';
-import { getStaf, deleteStaf } from '../../../lib/mockData';
+import type { StafResponse } from '../../../lib/api';
+import { getStafs, deleteStaf } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
 
 export default function StafList() {
   useEffect(() => { document.title = 'Manajemen staf :: LPM Admin'; }, []);
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
-  const [data, setData] = useState<Staf[]>([]);
+  const [data, setData] = useState<StafResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const list = await getStaf();
+      const list = await getStafs();
       setData(list.sort((a, b) => a.urutan - b.urutan));
     } finally {
       setLoading(false);
@@ -25,7 +25,7 @@ export default function StafList() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleDelete = async (item: Staf) => {
+  const handleDelete = async (item: StafResponse) => {
     await deleteStaf(item.id);
     await load();
   };
@@ -34,7 +34,7 @@ export default function StafList() {
     {
       key: 'nama',
       label: 'Nama',
-      render: (_: unknown, item: Staf) => (
+      render: (_: unknown, item: StafResponse) => (
         <div className="flex items-center gap-3">
           {item.foto ? (
             <img
@@ -55,14 +55,14 @@ export default function StafList() {
     {
       key: 'jabatan',
       label: 'Jabatan',
-      render: (_: unknown, item: Staf) => (
+      render: (_: unknown, item: StafResponse) => (
         <span className="text-slate-700 text-sm">{item.jabatan}</span>
       ),
     },
     {
       key: 'email',
       label: 'Email',
-      render: (_: unknown, item: Staf) => (
+      render: (_: unknown, item: StafResponse) => (
         item.email ? (
           <a
             href={`mailto:${item.email}`}

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Loader, UserCircle2, Image as ImageIcon } from 'lucide-react';
-import { getSambutan, updateSambutan } from '../../../lib/mockData';
+import { getSambutan, updateSambutan } from '../../../lib/api';
 import FileUpload from '../../components/FileUpload';
+import RichEditor from '../../components/RichEditor';
 
 export default function ProfilSambutan() {
   const navigate = useNavigate();
@@ -23,11 +24,13 @@ export default function ProfilSambutan() {
     document.title = 'Edit Sambutan Ketua - Admin LPM';
     getSambutan().then((data) => {
       setForm({
-        nama: data.nama,
-        jabatan: data.jabatan,
-        konten: data.konten,
-        foto: data.foto ?? '',
+        nama: data?.nama ?? '',
+        jabatan: data?.jabatan ?? '',
+        konten: data?.konten ?? '',
+        foto: data?.foto ?? '',
       });
+      setLoading(false);
+    }).catch(() => {
       setLoading(false);
     });
   }, []);
@@ -153,13 +156,10 @@ export default function ProfilSambutan() {
             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
               Konten Sambutan
             </label>
-            <textarea
-              name="konten"
+            <RichEditor
               value={form.konten}
-              onChange={handleChange}
-              rows={5}
+              onChange={(html) => setForm((prev) => ({ ...prev, konten: html }))}
               placeholder="Tulis konten sambutan di sini..."
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all resize-none"
             />
           </div>
 

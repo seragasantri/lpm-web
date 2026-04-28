@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Loader, FileText } from 'lucide-react';
-import { getHalaman, updateHalaman } from '../../../lib/mockData';
+import { getHalaman, updateHalaman } from '../../../lib/api';
 import RichEditor from '../../components/RichEditor';
 
 export default function ProfilLpm() {
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({ judul: '', konten: '' });
+  const [form, setForm] = useState({ judul: 'Profil LPM', konten: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -15,11 +15,12 @@ export default function ProfilLpm() {
 
   useEffect(() => {
     document.title = 'Edit Profil LPM - Admin LPM';
-    getHalaman().then((list) => {
-      const page = list.find((p) => p.slug === 'profil');
-      if (page) {
-        setForm({ judul: page.judul, konten: page.konten });
+    getHalaman('profil').then((data) => {
+      if (data) {
+        setForm({ judul: data.judul, konten: data.konten });
       }
+      setLoading(false);
+    }).catch(() => {
       setLoading(false);
     });
   }, []);

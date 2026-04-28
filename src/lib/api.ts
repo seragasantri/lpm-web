@@ -47,7 +47,7 @@ async function apiFetch(
     clearAuth();
     // Redirect to login if not already on login page
     if (!window.location.pathname.includes("/login")) {
-      window.location.href = "/admin/login";
+      window.location.href = "/login";
     }
   }
 
@@ -322,15 +322,43 @@ export async function getSettings(): Promise<Record<string, string>> {
   return json.data;
 }
 
+// Public Settings (no auth, no redirect)
+export async function getPublicSettings(): Promise<Record<string, string>> {
+  try {
+    const response = await fetch(`${API_BASE}/public/settings`);
+    if (!response.ok) return {};
+    const json: ApiResponse<Record<string, string>> = await response.json();
+    if (!json.success) return {};
+    return json.data || {};
+  } catch {
+    return {};
+  }
+}
+
+// Settings - Logo & Favicon
+export async function updateSettingImage(
+  key: string,
+  imageUrl: string,
+): Promise<Record<string, string>> {
+  const response = await apiFetch("/settings/image", {
+    method: "POST",
+    body: JSON.stringify({ key, image_url: imageUrl }),
+  });
+  const json: ApiResponse<Record<string, string>> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
 export async function updateSettings(data: {
-  enabled_languages: string[];
-}): Promise<{ enabled_languages: string[] }> {
+  enabled_languages?: string[];
+  logo_url?: string;
+  favicon_url?: string;
+}): Promise<Record<string, string>> {
   const response = await apiFetch("/settings", {
     method: "PUT",
     body: JSON.stringify(data),
   });
-  const json: ApiResponse<{ enabled_languages: string[] }> =
-    await response.json();
+  const json: ApiResponse<Record<string, string>> = await response.json();
   if (!json.success) throw new Error(json.message);
   return json.data;
 }
@@ -498,10 +526,15 @@ export async function getBerita(id: number): Promise<BeritaResponse> {
 
 export async function createBerita(
   data: CreateBeritaData,
+  tagIds?: number[],
 ): Promise<BeritaResponse> {
+  const body: CreateBeritaData & { tag_ids?: number[] } = { ...data };
+  if (tagIds && tagIds.length > 0) {
+    body.tag_ids = tagIds;
+  }
   const response = await apiFetch("/beritas", {
     method: "POST",
-    body: JSON.stringify(data),
+    body: JSON.stringify(body),
   });
   const json: ApiResponse<BeritaResponse> = await response.json();
   if (!json.success) throw new Error(json.message);
@@ -511,10 +544,15 @@ export async function createBerita(
 export async function updateBerita(
   id: number,
   data: Partial<CreateBeritaData>,
+  tagIds?: number[],
 ): Promise<BeritaResponse> {
+  const body: Partial<CreateBeritaData> & { tag_ids?: number[] } = { ...data };
+  if (tagIds !== undefined) {
+    body.tag_ids = tagIds;
+  }
   const response = await apiFetch(`/beritas/${id}`, {
     method: "PUT",
-    body: JSON.stringify(data),
+    body: JSON.stringify(body),
   });
   const json: ApiResponse<BeritaResponse> = await response.json();
   if (!json.success) throw new Error(json.message);
@@ -652,7 +690,9 @@ export async function getGaleri(id: number): Promise<GaleriResponse> {
   return json.data;
 }
 
-export async function createGaleri(data: CreateGaleriData): Promise<GaleriResponse> {
+export async function createGaleri(
+  data: CreateGaleriData,
+): Promise<GaleriResponse> {
   const response = await apiFetch("/galeris", {
     method: "POST",
     body: JSON.stringify(data),
@@ -662,7 +702,10 @@ export async function createGaleri(data: CreateGaleriData): Promise<GaleriRespon
   return json.data;
 }
 
-export async function updateGaleri(id: number, data: Partial<CreateGaleriData>): Promise<GaleriResponse> {
+export async function updateGaleri(
+  id: number,
+  data: Partial<CreateGaleriData>,
+): Promise<GaleriResponse> {
   const response = await apiFetch(`/galeris/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -672,12 +715,16 @@ export async function updateGaleri(id: number, data: Partial<CreateGaleriData>):
   return json.data;
 }
 
-export async function getPublicGaleris(params?: { per_page?: number }): Promise<GaleriResponse[]> {
+export async function getPublicGaleris(params?: {
+  per_page?: number;
+}): Promise<GaleriResponse[]> {
   const searchParams = new URLSearchParams();
   if (params?.per_page) searchParams.set("per_page", String(params.per_page));
 
   const query = searchParams.toString();
-  const response = await fetch(`${API_BASE}/public/galeris${query ? `?${query}` : ""}`);
+  const response = await fetch(
+    `${API_BASE}/public/galeris${query ? `?${query}` : ""}`,
+  );
   const json: ApiResponse<GaleriResponse[]> = await response.json();
   if (!json.success) throw new Error(json.message);
   return json.data;
@@ -706,7 +753,10 @@ export async function getKategoriGaleris(): Promise<KategoriGaleriResponse[]> {
   return json.data;
 }
 
-export async function createKategoriGaleri(data: { nama: string; warna?: string }): Promise<KategoriGaleriResponse> {
+export async function createKategoriGaleri(data: {
+  nama: string;
+  warna?: string;
+}): Promise<KategoriGaleriResponse> {
   const response = await apiFetch("/kategori-galeris", {
     method: "POST",
     body: JSON.stringify(data),
@@ -716,7 +766,10 @@ export async function createKategoriGaleri(data: { nama: string; warna?: string 
   return json.data;
 }
 
-export async function updateKategoriGaleri(id: number, data: { nama: string; warna?: string }): Promise<KategoriGaleriResponse> {
+export async function updateKategoriGaleri(
+  id: number,
+  data: { nama: string; warna?: string },
+): Promise<KategoriGaleriResponse> {
   const response = await apiFetch(`/kategori-galeris/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -727,9 +780,797 @@ export async function updateKategoriGaleri(id: number, data: { nama: string; war
 }
 
 export async function deleteKategoriGaleri(id: number): Promise<void> {
-  const response = await apiFetch(`/kategori-galeris/${id}`, { method: "DELETE" });
+  const response = await apiFetch(`/kategori-galeris/${id}`, {
+    method: "DELETE",
+  });
   const json: ApiResponse<null> = await response.json();
   if (!json.success) throw new Error(json.message);
+}
+
+// ============ Profil / Sambutan ============
+export interface SambutanResponse {
+  id?: number;
+  nama: string;
+  jabatan: string;
+  konten: string;
+  foto: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export async function getSambutan(): Promise<SambutanResponse> {
+  const response = await apiFetch("/profil/sambutan");
+  const json: ApiResponse<SambutanResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data || { nama: '', jabatan: '', konten: '', foto: null };
+}
+
+export async function updateSambutan(data: {
+  nama: string;
+  jabatan: string;
+  konten?: string;
+  foto?: string;
+}): Promise<SambutanResponse> {
+  const response = await apiFetch("/profil/sambutan", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<SambutanResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+// Public endpoints (no auth required)
+export async function getPublicSambutan(): Promise<SambutanResponse | null> {
+  try {
+    const response = await fetch(`${API_BASE}/public/profil/sambutan`);
+    const json: ApiResponse<SambutanResponse> = await response.json();
+    if (!json.success) throw new Error(json.message);
+    return json.data;
+  } catch {
+    return null;
+  }
+}
+
+// ============ Halaman (Profil LPM) ============
+export interface HalamanResponse {
+  id: number;
+  slug: string;
+  judul: string;
+  konten: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getHalaman(slug: string): Promise<HalamanResponse | null> {
+  try {
+    const response = await apiFetch(`/halamans/${slug}`);
+    const json: ApiResponse<HalamanResponse> = await response.json();
+    if (!json.success) throw new Error(json.message);
+    return json.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateHalaman(slug: string, data: { konten: string }): Promise<HalamanResponse> {
+  const response = await apiFetch(`/halamans/${slug}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<HalamanResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+// Public Halaman (no auth)
+export async function getPublicHalaman(slug: string): Promise<{ judul: string; konten: string } | null> {
+  try {
+    const response = await fetch(`${API_BASE}/public/halamans/${slug}`);
+    const json: ApiResponse<{ judul: string; konten: string }> = await response.json();
+    if (!json.success) throw new Error(json.message);
+    return json.data;
+  } catch {
+    return null;
+  }
+}
+
+// ============ Visi Misi ============
+export interface VisiMisiResponse {
+  id: number;
+  visi: string;
+  items: Array<{
+    id: number;
+    no: number;
+    judul: string;
+    deskripsi: string | null;
+  }>;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getVisiMisi(): Promise<VisiMisiResponse | null> {
+  try {
+    const response = await apiFetch("/profil/visimisi");
+    const json: ApiResponse<VisiMisiResponse> = await response.json();
+    if (!json.success) throw new Error(json.message);
+    return json.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateVisiMisi(data: { visi: string; misi: Array<{ id?: number; no: number; judul: string; deskripsi?: string }> }): Promise<VisiMisiResponse> {
+  const response = await apiFetch("/profil/visimisi", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<VisiMisiResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+// Public Visi Misi (no auth)
+export async function getPublicVisiMisi(): Promise<{ visi: string; items: Array<{ no: number; judul: string; deskripsi: string }> } | null> {
+  try {
+    const response = await fetch(`${API_BASE}/public/profil/visimisi`);
+    const json: ApiResponse<VisiMisiResponse> = await response.json();
+    if (!json.success) throw new Error(json.message);
+    const data = json.data;
+    return {
+      visi: data.visi || '',
+      items: (data.items || []).map((item) => ({
+        no: item.no,
+        judul: item.judul,
+        deskripsi: item.deskripsi || '',
+      })),
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ============ Kontak ============
+export interface KontakResponse {
+  id: number;
+  alamat: string;
+  gedung: string | null;
+  telepon: string;
+  email: string;
+  maps_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getKontak(): Promise<KontakResponse | null> {
+  try {
+    const response = await apiFetch("/profil/kontak");
+    const json: ApiResponse<KontakResponse> = await response.json();
+    if (!json.success) throw new Error(json.message);
+    return json.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateKontak(data: {
+  alamat: string;
+  gedung?: string;
+  telepon: string;
+  email?: string;
+  maps_url?: string;
+}): Promise<KontakResponse> {
+  const response = await apiFetch("/profil/kontak", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<KontakResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+// Public Kontak (no auth)
+export async function getPublicKontak(): Promise<{ alamat: string; gedung?: string; telepon: string; email: string } | null> {
+  try {
+    const response = await fetch(`${API_BASE}/public/profil/kontak`);
+    const json: ApiResponse<KontakResponse> = await response.json();
+    if (!json.success) throw new Error(json.message);
+    const data = json.data;
+    return {
+      alamat: data.alamat || '',
+      gedung: data.gedung || undefined,
+      telepon: data.telepon || '',
+      email: data.email || '',
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ============ Struktur ============
+export interface StrukturResponse {
+  id: number;
+  deskripsi: string | null;
+  gambar: string | null;
+  file_pdf: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getStruktur(): Promise<StrukturResponse | null> {
+  try {
+    const response = await apiFetch("/profil/struktur");
+    const json: ApiResponse<StrukturResponse> = await response.json();
+    if (!json.success) throw new Error(json.message);
+    return json.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateStruktur(data: { deskripsi?: string; gambar?: string; file_pdf?: string }): Promise<StrukturResponse> {
+  const response = await apiFetch("/profil/struktur", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<StrukturResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+// Public Struktur (no auth)
+export async function getPublicStruktur(): Promise<{ deskripsi?: string; gambar?: string } | null> {
+  try {
+    const response = await fetch(`${API_BASE}/public/profil/struktur`);
+    const json: ApiResponse<StrukturResponse> = await response.json();
+    if (!json.success) throw new Error(json.message);
+    const data = json.data;
+    return {
+      deskripsi: data.deskripsi || undefined,
+      gambar: data.gambar || undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ============ Staf ============
+export interface StafResponse {
+  id: number;
+  nama: string;
+  jabatan: string;
+  foto: string | null;
+  program_studi: string | null;
+  email: string | null;
+  urutan: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getStafs(): Promise<StafResponse[]> {
+  const response = await apiFetch("/stafs");
+  const json: ApiResponse<{ data: StafResponse[] }> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data.data || [];
+}
+
+// Public Stafs (no auth)
+export async function getPublicStafs(): Promise<StafResponse[]> {
+  try {
+    const response = await fetch(`${API_BASE}/public/stafs`);
+    const json: ApiResponse<StafResponse[]> = await response.json();
+    if (!json.success) throw new Error(json.message);
+    return json.data || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getStafById(id: number): Promise<StafResponse> {
+  const response = await apiFetch(`/stafs/${id}`);
+  const json: ApiResponse<StafResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function createStaf(data: {
+  nama: string;
+  jabatan: string;
+  foto?: string;
+  program_studi?: string;
+  email?: string;
+  urutan?: number;
+}): Promise<StafResponse> {
+  const response = await apiFetch("/stafs", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<StafResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function updateStaf(id: number, data: Partial<{
+  nama: string;
+  jabatan: string;
+  foto: string;
+  program_studi: string;
+  email: string;
+  urutan: number;
+}>): Promise<StafResponse> {
+  const response = await apiFetch(`/stafs/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<StafResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function deleteStaf(id: number): Promise<void> {
+  const response = await apiFetch(`/stafs/${id}`, { method: "DELETE" });
+  const json: ApiResponse<null> = await response.json();
+  if (!json.success) throw new Error(json.message);
+}
+
+// ============ Download ============
+export interface DownloadResponse {
+  id: number;
+  judul: string;
+  tipe: string;
+  ukuran: string | null;
+  url: string;
+  tanggal: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getDownloads(): Promise<DownloadResponse[]> {
+  const response = await apiFetch("/downloads");
+  const json: ApiResponse<{ data: DownloadResponse[] }> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data.data || [];
+}
+
+export async function getDownloadById(id: number): Promise<DownloadResponse> {
+  const response = await apiFetch(`/downloads/${id}`);
+  const json: ApiResponse<DownloadResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function createDownload(data: {
+  judul: string;
+  tipe: string;
+  url: string;
+  tanggal: string;
+  ukuran?: string;
+}): Promise<DownloadResponse> {
+  const response = await apiFetch("/downloads", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<DownloadResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function updateDownload(id: number, data: Partial<{
+  judul: string;
+  tipe: string;
+  url: string;
+  tanggal: string;
+  ukuran: string;
+}>): Promise<DownloadResponse> {
+  const response = await apiFetch(`/downloads/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<DownloadResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function deleteDownload(id: number): Promise<void> {
+  const response = await apiFetch(`/downloads/${id}`, { method: "DELETE" });
+  const json: ApiResponse<null> = await response.json();
+  if (!json.success) throw new Error(json.message);
+}
+
+// Public Downloads (no auth)
+export async function getPublicDownloads(): Promise<DownloadResponse[]> {
+  try {
+    const response = await fetch(`${API_BASE}/public/downloads`);
+    const json: ApiResponse<DownloadResponse[]> = await response.json();
+    if (!json.success) throw new Error(json.message);
+    return json.data || [];
+  } catch {
+    return [];
+  }
+}
+
+// ============ Poll ============
+export interface PollOptionResponse {
+  id: number;
+  label: string;
+  votes: number;
+}
+
+export interface PollResponse {
+  id: number;
+  pertanyaan: string;
+  is_active: boolean;
+  options: PollOptionResponse[];
+}
+
+export async function getPoll(): Promise<PollResponse | null> {
+  const response = await apiFetch("/polls");
+  const json: ApiResponse<PollResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function updatePoll(data: {
+  pertanyaan: string;
+  is_active: boolean;
+  options: Array<{ id?: number; label: string }>;
+}): Promise<PollResponse> {
+  const response = await apiFetch("/poll", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<PollResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function votePoll(optionId: number): Promise<void> {
+  const response = await fetch(`${API_BASE}/poll/vote`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ option_id: optionId }),
+  });
+  const json: ApiResponse<null> = await response.json();
+  if (!json.success) throw new Error(json.message);
+}
+
+// Public Poll (no auth)
+export async function getPublicPoll(): Promise<{ pertanyaan: string; options: PollOptionResponse[] } | null> {
+  try {
+    const response = await fetch(`${API_BASE}/public/polls`);
+    const json: ApiResponse<PollResponse> = await response.json();
+    if (!json.success) throw new Error(json.message);
+    const data = json.data;
+    if (!data) return null;
+    return {
+      pertanyaan: data.pertanyaan || '',
+      options: (data.options || []).map((o) => ({ id: o.id, label: o.label, votes: o.votes })),
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ============ Partner / Sertifikasi ============
+export interface PartnerResponse {
+  id: number;
+  nama: string;
+  logo_url: string | null;
+  link_url: string;
+  urutan: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getPartners(): Promise<PartnerResponse[]> {
+  const response = await apiFetch("/partners");
+  const json: ApiResponse<PartnerResponse[]> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function createPartner(data: {
+  nama: string;
+  logo_url?: string;
+  link_url: string;
+  urutan?: number;
+}): Promise<PartnerResponse> {
+  const response = await apiFetch("/partners", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<PartnerResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function updatePartner(id: number, data: Partial<{
+  nama: string;
+  logo_url: string;
+  link_url: string;
+  urutan: number;
+}>): Promise<PartnerResponse> {
+  const response = await apiFetch(`/partners/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<PartnerResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function deletePartner(id: number): Promise<void> {
+  const response = await apiFetch(`/partners/${id}`, { method: "DELETE" });
+  const json: ApiResponse<null> = await response.json();
+  if (!json.success) throw new Error(json.message);
+}
+
+// Public Partners (no auth)
+export async function getPublicPartners(): Promise<PartnerResponse[]> {
+  try {
+    const response = await fetch(`${API_BASE}/public/partners`);
+    if (!response.ok) return [];
+    const json: ApiResponse<PartnerResponse[]> = await response.json();
+    if (!json.success) return [];
+    return json.data || [];
+  } catch {
+    return [];
+  }
+}
+
+// ============ Tags ============
+export interface TagResponse {
+  id: number;
+  nama: string;
+  slug: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getTags(): Promise<TagResponse[]> {
+  const response = await apiFetch("/tags");
+  const json: ApiResponse<TagResponse[]> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data || [];
+}
+
+export async function createTag(data: { nama: string; slug?: string }): Promise<TagResponse> {
+  const response = await apiFetch("/tags", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<TagResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function updateTag(id: number, data: { nama: string; slug?: string }): Promise<TagResponse> {
+  const response = await apiFetch(`/tags/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<TagResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function deleteTag(id: number): Promise<void> {
+  const response = await apiFetch(`/tags/${id}`, { method: "DELETE" });
+  const json: ApiResponse<null> = await response.json();
+  if (!json.success) throw new Error(json.message);
+}
+
+export async function getPublicTags(): Promise<TagResponse[]> {
+  try {
+    const response = await fetch(`${API_BASE}/public/tags`);
+    if (!response.ok) return [];
+    const json: ApiResponse<TagResponse[]> = await response.json();
+    if (!json.success) return [];
+    return json.data || [];
+  } catch {
+    return [];
+  }
+}
+
+// ============ Hero Settings ============
+export interface HeroSettingsResponse {
+  id: number;
+  title: string;
+  subtitle: string;
+  background_url: string | null;
+  video_url: string | null;
+  cta_text: string;
+  cta_link: string;
+  is_active: boolean;
+}
+
+export async function getHeroSettings(): Promise<HeroSettingsResponse | null> {
+  try {
+    const response = await apiFetch("/hero");
+    const json: ApiResponse<HeroSettingsResponse> = await response.json();
+    if (!json.success) throw new Error(json.message);
+    return json.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateHeroSettings(data: {
+  title?: string;
+  subtitle?: string;
+  background_url?: string;
+  video_url?: string;
+  cta_text?: string;
+  cta_link?: string;
+  is_active?: boolean;
+}): Promise<HeroSettingsResponse> {
+  const response = await apiFetch("/hero", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<HeroSettingsResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+// Public Hero (no auth)
+export async function getPublicHeroSettings(): Promise<{
+  title: string;
+  subtitle: string;
+  background_url: string | null;
+  video_url: string | null;
+  cta_text: string;
+  cta_link: string;
+} | null> {
+  try {
+    const response = await fetch(`${API_BASE}/public/hero`);
+    const json: ApiResponse<HeroSettingsResponse> = await response.json();
+    if (!json.success) throw new Error(json.message);
+    const data = json.data;
+    if (!data) return null;
+    return {
+      title: data.title || '',
+      subtitle: data.subtitle || '',
+      background_url: data.background_url,
+      video_url: data.video_url,
+      cta_text: data.cta_text || '',
+      cta_link: data.cta_link || '',
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ============ Quick Access ============
+export interface QuickAccessResponse {
+  id: number;
+  judul: string;
+  deskripsi: string;
+  icon: string;
+  link_url: string;
+  urutan: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getQuickAccessItems(): Promise<QuickAccessResponse[]> {
+  const response = await apiFetch("/quick-access");
+  const json: ApiResponse<QuickAccessResponse[]> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function createQuickAccessItem(data: {
+  judul: string;
+  deskripsi?: string;
+  icon?: string;
+  link_url: string;
+  urutan?: number;
+}): Promise<QuickAccessResponse> {
+  const response = await apiFetch("/quick-access", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<QuickAccessResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function updateQuickAccessItem(id: number, data: Partial<{
+  judul: string;
+  deskripsi: string;
+  icon: string;
+  link_url: string;
+  urutan: number;
+  is_active: boolean;
+}>): Promise<QuickAccessResponse> {
+  const response = await apiFetch(`/quick-access/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<QuickAccessResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function deleteQuickAccessItem(id: number): Promise<void> {
+  const response = await apiFetch(`/quick-access/${id}`, { method: "DELETE" });
+  const json: ApiResponse<null> = await response.json();
+  if (!json.success) throw new Error(json.message);
+}
+
+// Public Quick Access (no auth)
+export async function getPublicQuickAccessItems(): Promise<QuickAccessResponse[]> {
+  try {
+    const response = await fetch(`${API_BASE}/public/quick-access`);
+    const json: ApiResponse<QuickAccessResponse[]> = await response.json();
+    if (!json.success) throw new Error(json.message);
+    return json.data || [];
+  } catch {
+    return [];
+  }
+}
+
+// ============ Info Terkini (Marquee) ============
+export interface InfoTerkininResponse {
+  id: number;
+  teks: string;
+  is_active: boolean;
+  urutan: number;
+}
+
+export async function getInfoTerkini(): Promise<InfoTerkininResponse[]> {
+  const response = await apiFetch("/info-terkini");
+  const json: ApiResponse<InfoTerkininResponse[]> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function createInfoTerkinin(data: {
+  teks: string;
+  urutan?: number;
+}): Promise<InfoTerkininResponse> {
+  const response = await apiFetch("/info-terkini", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<InfoTerkininResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function updateInfoTerkinin(id: number, data: Partial<{
+  teks: string;
+  urutan: number;
+  is_active: boolean;
+}>): Promise<InfoTerkininResponse> {
+  const response = await apiFetch(`/info-terkini/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<InfoTerkininResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function deleteInfoTerkinin(id: number): Promise<void> {
+  const response = await apiFetch(`/info-terkini/${id}`, { method: "DELETE" });
+  const json: ApiResponse<null> = await response.json();
+  if (!json.success) throw new Error(json.message);
+}
+
+// Public Info Terkini (no auth)
+export async function getPublicInfoTerkini(): Promise<string[]> {
+  try {
+    const response = await fetch(`${API_BASE}/public/info-terkini`);
+    if (!response.ok) return [];
+    const json: ApiResponse<InfoTerkininResponse[]> = await response.json();
+    if (!json.success) return [];
+    return (json.data || []).map(item => item.teks);
+  } catch {
+    return [];
+  }
 }
 
 export {

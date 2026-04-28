@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import { getPoll, updatePoll } from '../../../lib/mockData';
-import type { PollOption } from '../../../lib/types';
+import { getPoll, updatePoll } from '../../../lib/api';
 import { BarChart2, Plus, Trash2, Save, Loader } from 'lucide-react';
 
 export default function PollIndex() {
@@ -10,30 +9,38 @@ export default function PollIndex() {
 
   const [pertanyaan, setPertanyaan] = useState('');
   const [isActive, setIsActive] = useState(false);
-  const [options, setOptions] = useState<PollOption[]>([]);
+  const [options, setOptions] = useState<Array<{ id: number; label: string; votes: number }>>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    getPoll().then(poll => {
-      setPertanyaan(poll.pertanyaan);
-      setIsActive(poll.isActive);
-      setOptions(poll.options);
-      setLoading(false);
-    });
+    const fetchPoll = async () => {
+      try {
+        const data = await getPoll();
+        if (data) {
+          setPertanyaan(data.pertanyaan || '');
+          setIsActive(data.is_active ?? false);
+          setOptions(data.options || []);
+        }
+      } catch (err) {
+        console.error('Gagal memuat poll:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPoll();
   }, []);
 
   const addOption = () => {
-    const label = `Opsi ${options.length + 1}`;
-    setOptions(prev => [...prev, { id: `opt-${Date.now()}`, label, votes: 0 }]);
+    setOptions(prev => [...prev, { id: Date.now(), label: `Opsi ${prev.length + 1}`, votes: 0 }]);
   };
 
-  const removeOption = (id: string) => {
+  const removeOption = (id: number) => {
     setOptions(prev => prev.filter(o => o.id !== id));
   };
 
-  const updateOption = (id: string, field: 'label', value: string) => {
+  const updateOption = (id: number, field: 'label', value: string) => {
     setOptions(prev => prev.map(o => o.id === id ? { ...o, [field]: value } : o));
   };
 
@@ -44,6 +51,8 @@ export default function PollIndex() {
       await updatePoll({ pertanyaan, isActive, options });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error('Gagal menyimpan:', err);
     } finally {
       setSaving(false);
     }

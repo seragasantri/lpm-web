@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.99.2",
+    "@tanstack/react-query-devtools": "^5.99.2",
     "@tiptap/extension-image": "^3.22.3",
     "@tiptap/extension-link": "^3.22.3",
     "@tiptap/extension-placeholder": "^3.22.3",
@@ -22,6 +24,7 @@
     "@tiptap/pm": "^3.22.3",
     "@tiptap/react": "^3.22.3",
     "@tiptap/starter-kit": "^3.22.3",
+    "google-translate-api": "^2.3.0",
     "i18next": "^26.0.5",
     "i18next-browser-languagedetector": "^8.2.1",
     "lucide-react": "^1.8.0",

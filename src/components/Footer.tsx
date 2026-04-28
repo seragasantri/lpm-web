@@ -24,7 +24,7 @@ export default function Footer() {
               </div>
             </div>
             <p className="text-sky-200 text-sm leading-relaxed mb-6">
-              Lembaga Penjaminan Mutu UIN Raden Fatah Palembang致力于 menjaga dan meningkatkan kualitas pendidikan di lingkungan kampus melalui sistem penjaminan mutu yang komprehensif.
+              Lembaga Penjaminan Mutu UIN Raden Fatah Palembang menjaga dan meningkatkan kualitas pendidikan di lingkungan kampus melalui sistem penjaminan mutu yang komprehensif.
             </p>
             <div className="flex items-center gap-3">
               <a href="#" aria-label="Facebook" className="w-10 h-10 rounded-full bg-sky-800 flex items-center justify-center text-sky-300 hover:bg-yellow-400 hover:text-sky-950 transition-all duration-200">

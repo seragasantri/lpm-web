@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, X, Plus } from 'lucide-react';
 import { getKategori } from '../../../lib/hooks-data';
-import { getBerita, createBerita, updateBerita, type CreateBeritaData } from '../../../lib/api';
+import { getBerita, createBerita, updateBerita, getTags, createTag, type CreateBeritaData, type TagResponse } from '../../../lib/api';
 import FileUpload from '../../components/FileUpload';
 import RichEditor from '../../components/RichEditor';
 import Textarea from '../../components/Textarea';
@@ -18,6 +18,20 @@ export default function BeritaForm({ editId }: Props) {
   const [loading, setLoading] = useState(!!id);
   const [saving, setSaving] = useState(false);
   const [kategoriList, setKategoriList] = useState<{ id: number; nama: string }[]>([]);
+  const [tagList, setTagList] = useState<TagResponse[]>([]);
+  const [selectedTags, setSelectedTags] = useState<number[]>([]);
+  const [tagSearch, setTagSearch] = useState('');
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const [creatingTag, setCreatingTag] = useState(false);
+  const tagDropdownRef = useRef<HTMLDivElement>(null);
+
+  const filteredTags = tagList.filter(tag =>
+    tag.nama.toLowerCase().includes(tagSearch.toLowerCase()) &&
+    !selectedTags.includes(tag.id)
+  );
+
+  const exactMatchExists = tagList.some(t => t.nama.toLowerCase() === tagSearch.toLowerCase().trim());
+  const canCreateNew = tagSearch.trim().length > 0 && !exactMatchExists && !selectedTags.some(id => tagList.find(t => t.id === id)?.nama.toLowerCase() === tagSearch.toLowerCase().trim());
   const [form, setForm] = useState<CreateBeritaData>({
     judul: '',
     slug: '',
@@ -38,6 +52,8 @@ export default function BeritaForm({ editId }: Props) {
         setForm(prev => ({ ...prev, kategoris_id: data[0].id }));
       }
     });
+    // Load tags
+    getTags().then(data => setTagList(data)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -55,6 +71,10 @@ export default function BeritaForm({ editId }: Props) {
           status: b.status,
           meta_title: b.meta_title || '',
         });
+        // Load tags for this berita if available
+        if ((b as any).tags) {
+          setSelectedTags((b as any).tags.map((t: TagResponse) => t.id));
+        }
         setLoading(false);
       }).catch(() => {
         alert('Gagal memuat data berita');
@@ -62,6 +82,31 @@ export default function BeritaForm({ editId }: Props) {
       });
     }
   }, [id, navigate]);
+
+  const handleTagToggle = (tagId: number) => {
+    setSelectedTags(prev =>
+      prev.includes(tagId)
+        ? prev.filter(t => t !== tagId)
+        : [...prev, tagId]
+    );
+  };
+
+  const handleCreateInlineTag = async () => {
+    if (!tagSearch.trim()) return;
+    setCreatingTag(true);
+    try {
+      const newTag = await createTag({ nama: tagSearch.trim() });
+      setTagList(prev => [...prev, newTag]);
+      setSelectedTags(prev => [...prev, newTag.id]);
+      setTagSearch('');
+      setShowTagDropdown(false);
+    } catch (err) {
+      console.error('Gagal membuat tag:', err);
+      alert('Gagal membuat tag baru.');
+    } finally {
+      setCreatingTag(false);
+    }
+  };
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
@@ -84,9 +129,9 @@ export default function BeritaForm({ editId }: Props) {
       };
       if (id) {
         const numId = parseInt(id);
-        await updateBerita(numId, dataToSubmit);
+        await updateBerita(numId, dataToSubmit, selectedTags);
       } else {
-        await createBerita(dataToSubmit);
+        await createBerita(dataToSubmit, selectedTags);
       }
       navigate('/admin/berita');
     } catch (err) {
@@ -179,6 +224,98 @@ export default function BeritaForm({ editId }: Props) {
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1">Slug</label>
             <input name="slug" value={form.slug} onChange={handleChange} className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-400" placeholder="auto-generate dari judul" />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Tags</label>
+            <div className="relative" ref={tagDropdownRef}>
+              {/* Selected Tags */}
+              {selectedTags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {selectedTags.map(tagId => {
+                    const tag = tagList.find(t => t.id === tagId);
+                    return tag ? (
+                      <span key={tagId} className="inline-flex items-center gap-1 px-3 py-1.5 bg-sky-100 text-sky-700 rounded-full text-sm font-medium">
+                        {tag.nama}
+                        <button type="button" onClick={() => handleTagToggle(tagId)} className="hover:text-sky-900">
+                          <X size={14} />
+                        </button>
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              )}
+              {/* Tag Dropdown */}
+              <div className="relative">
+                <input
+                  type="text"
+                  value={tagSearch}
+                  onChange={(e) => setTagSearch(e.target.value)}
+                  onFocus={() => setShowTagDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowTagDropdown(false), 150)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && canCreateNew && !creatingTag) {
+                      e.preventDefault();
+                      handleCreateInlineTag();
+                    }
+                  }}
+                  placeholder="Cari atau buat tag..."
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
+                />
+                {showTagDropdown && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {filteredTags.length > 0 && (
+                      <>
+                        {filteredTags.map(tag => (
+                          <button
+                            key={tag.id}
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              handleTagToggle(tag.id);
+                              setTagSearch('');
+                            }}
+                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-sky-50 transition-colors flex items-center justify-between"
+                          >
+                            <span>{tag.nama}</span>
+                            <span className="text-slate-400 text-xs">{tag.slug}</span>
+                          </button>
+                        ))}
+                        {canCreateNew && (
+                          <div className="border-t border-slate-100" />
+                        )}
+                      </>
+                    )}
+                    {canCreateNew && (
+                      <button
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleCreateInlineTag();
+                        }}
+                        disabled={creatingTag}
+                        className="w-full px-4 py-2.5 text-left text-sm hover:bg-sky-50 transition-colors flex items-center gap-2 text-sky-600 font-medium disabled:opacity-50"
+                      >
+                        {creatingTag ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-sky-600 border-t-transparent rounded-full animate-spin" />
+                            Membuat...
+                          </>
+                        ) : (
+                          <>
+                            <Plus size={16} />
+                            Buat tag baru: "{tagSearch.trim()}"
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {!canCreateNew && filteredTags.length === 0 && (
+                      <div className="px-4 py-3 text-sm text-slate-500 text-center">Tidak ada tag yang cocok</div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-slate-400">Ketik untuk mencari atau membuat tag baru.</p>
+            </div>
           </div>
         </div>
 

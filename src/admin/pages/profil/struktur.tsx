@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Loader, GitBranch, Image as ImageIcon, FileText } from 'lucide-react';
-import { getStrukturProfil, updateStrukturProfil } from '../../../lib/mockData';
+import { getStruktur, updateStruktur } from '../../../lib/api';
 import FileUpload from '../../components/FileUpload';
 
 export default function ProfilStruktur() {
@@ -20,12 +20,16 @@ export default function ProfilStruktur() {
 
   useEffect(() => {
     document.title = 'Edit Struktur Organisasi - Admin LPM';
-    getStrukturProfil().then((data) => {
-      setForm({
-        deskripsi: data.deskripsi,
-        gambar: data.gambar ?? '',
-        filePdf: data.filePdf ?? '',
-      });
+    getStruktur().then((data) => {
+      if (data) {
+        setForm({
+          deskripsi: data.deskripsi || '',
+          gambar: data.gambar || '',
+          filePdf: data.file_pdf || '',
+        });
+      }
+      setLoading(false);
+    }).catch(() => {
       setLoading(false);
     });
   }, []);
@@ -37,10 +41,10 @@ export default function ProfilStruktur() {
 
     setSaving(true);
     try {
-      await updateStrukturProfil({
+      await updateStruktur({
         deskripsi: form.deskripsi.trim(),
         gambar: form.gambar || undefined,
-        filePdf: form.filePdf || undefined,
+        file_pdf: form.filePdf || undefined,
       });
       setSaved(true);
       setTimeout(() => navigate('/admin'), 1500);

@@ -2,31 +2,39 @@ import { useEffect, useState } from 'react';
 import { ShieldCheck, MapPin, Building, Phone, Mail, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { getHalaman, getVisiMisi, getKontakData } from '../lib/mockData';
-import type { Halaman, VisiMisiData, KontakData } from '../lib/types';
+import { getPublicHalaman, getPublicVisiMisi, getPublicKontak } from '../lib/api';
 import { contactInfo } from '../data/navigation';
 
 function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim();
 }
 
+interface HalamanData { judul: string; konten: string }
+interface VisiMisiData { visi: string; items: Array<{ no: number; judul: string; deskripsi: string }> }
+interface KontakData { alamat: string; gedung?: string; telepon: string; email: string }
+
 export default function ProfilPage() {
   useEffect(() => { document.title = 'Profil LPM :: LPM UIN Raden Fatah Palembang'; }, []);
 
-  const [halaman, setHalaman] = useState<Halaman | null>(null);
+  const [halaman, setHalaman] = useState<HalamanData | null>(null);
   const [visimisi, setVisimisi] = useState<VisiMisiData | null>(null);
   const [kontak, setKontak] = useState<KontakData | null>(null);
 
   useEffect(() => {
-    Promise.all([getHalaman(), getVisiMisi(), getKontakData()]).then(([halamanList, vm, kt]) => {
-      const page = halamanList.find(p => p.slug === 'profil');
-      if (page) setHalaman(page);
-      setVisimisi(vm);
-      setKontak(kt);
-    });
+    const fetchData = async () => {
+      const [h, vm, kt] = await Promise.all([
+        getPublicHalaman('profil'),
+        getPublicVisiMisi(),
+        getPublicKontak(),
+      ]);
+      if (h) setHalaman(h);
+      if (vm) setVisimisi(vm);
+      if (kt) setKontak(kt);
+    };
+    fetchData();
   }, []);
 
-  const missions = visimisi?.misi.map(m => m.deskripsi) ?? [
+  const missions = visimisi?.items.map(m => m.deskripsi) ?? [
     'Melaksanakan sistem penjaminan mutu internal secara terencana dan kontinyu dengan mengacu kepada standar nasional dan internasional.',
     'Mengkoordinir dan menyiapkan kegiatan penjaminan mutu eksternal melalui akreditasi, baik di tingkat program studi maupun institusi.',
     'Mengkoordinir dan mengarahkan semua bagian/civitas akademik UIN Raden Fatah untuk memenuhi seluruh aspek standar mutu nasional maupun internasional.',
@@ -81,7 +89,7 @@ export default function ProfilPage() {
         <div>
           <h2 className="text-2xl font-bold text-slate-800 mb-6">Misi</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {(visimisi?.misi ?? missions.map((m, i) => ({ deskripsi: m }))).map((mission, index) => (
+            {(visimisi?.items ?? missions.map((m, i) => ({ deskripsi: m }))).map((mission, index) => (
               <div
                 key={index}
                 className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow"

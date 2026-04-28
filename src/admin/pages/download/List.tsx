@@ -2,8 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Download, FileText, FileSpreadsheet, Archive, Link2, File } from 'lucide-react';
 import DataTable from '../../components/DataTable';
-import type { DownloadFile } from '../../../lib/types';
-import { getDownloads, deleteDownload } from '../../../lib/mockData';
+import type { DownloadResponse } from '../../../lib/api';
+import { getDownloads, deleteDownload } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
 
 const TIPE_CONFIG: Record<string, { label: string; badge: string; Icon: React.ElementType }> = {
@@ -22,7 +22,7 @@ export default function DownloadList() {
   useEffect(() => { document.title = 'Manajemen download :: LPM Admin'; }, []);
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
-  const [data, setData] = useState<DownloadFile[]>([]);
+  const [data, setData] = useState<DownloadResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -30,6 +30,8 @@ export default function DownloadList() {
     try {
       const list = await getDownloads();
       setData(list);
+    } catch (err) {
+      console.error('Gagal memuat data:', err);
     } finally {
       setLoading(false);
     }
@@ -37,16 +39,21 @@ export default function DownloadList() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleDelete = async (item: DownloadFile) => {
-    await deleteDownload(item.id);
-    await load();
+  const handleDelete = async (item: DownloadResponse) => {
+    if (!confirm(`Hapus "${item.judul}"?`)) return;
+    try {
+      await deleteDownload(item.id);
+      await load();
+    } catch (err) {
+      console.error('Gagal hapus:', err);
+    }
   };
 
   const columns = [
     {
       key: 'judul',
       label: 'Judul',
-      render: (_: unknown, item: DownloadFile) => {
+      render: (_: unknown, item: DownloadResponse) => {
         const cfg = getTipeConfig(item.tipe);
         const Icon = cfg.Icon;
         return (
@@ -62,7 +69,7 @@ export default function DownloadList() {
     {
       key: 'tipe',
       label: 'Tipe',
-      render: (_: unknown, item: DownloadFile) => {
+      render: (_: unknown, item: DownloadResponse) => {
         const cfg = getTipeConfig(item.tipe);
         return (
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${cfg.badge}`}>
@@ -74,14 +81,14 @@ export default function DownloadList() {
     {
       key: 'ukuran',
       label: 'Ukuran',
-      render: (_: unknown, item: DownloadFile) => (
+      render: (_: unknown, item: DownloadResponse) => (
         <span className="text-slate-500 text-sm">{item.ukuran ?? '-'}</span>
       ),
     },
     {
       key: 'tanggal',
       label: 'Tanggal',
-      render: (_: unknown, item: DownloadFile) => (
+      render: (_: unknown, item: DownloadResponse) => (
         <span className="text-slate-500 text-sm">
           {new Date(item.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
         </span>
