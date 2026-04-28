@@ -21,7 +21,6 @@ const kategoriColors: Record<string, string> = {
 export default function BeritaList() {
   useEffect(() => { document.title = 'Manajemen Berita :: LPM Admin'; }, []);
   const [data, setData] = useState<BeritaResponse[]>([]);
-  console.log("🚀 ~ BeritaList ~ data:", data)
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +31,7 @@ export default function BeritaList() {
     setError(null);
     try {
       const result = await getBeritas({ per_page: 100 });
-      setData(Array.isArray(result) ? result : (result?.data || []));
+      setData(result.data || []);
       setTotal(result.total || 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal memuat data');

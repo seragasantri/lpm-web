@@ -45,7 +45,7 @@ export default function AdminTopbar({ onMenuClick }: AdminTopbarProps) {
 
   const handleLogout = () => {
     logout();
-    navigate('/admin/login');
+    navigate('/login');
   };
 
   return (

@@ -3,33 +3,68 @@ import {
   Info, FileText, CheckCircle, Download,
   Calendar, Clock, BarChart2, BookOpen,
   ArrowRight, Monitor, Award, Target, Users,
-  ShieldCheck, Play, Quote, Building, Globe,
+  ShieldCheck, Play, Quote, Building,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getPublicBeritas, type BeritaResponse } from '../lib/api';
+import { getPublicBeritas, getPublicSambutan, getPublicDownloads, getPublicPoll, getPublicQuickAccessItems, getPublicPartners, getPublicInfoTerkini, type BeritaResponse, type DownloadResponse } from '../lib/api';
 
-const PRAYER_TIMES = [
-  { name: 'Imsak', time: '04:33 WIB' },
-  { name: 'Subuh', time: '04:43 WIB' },
-  { name: 'Syuruq', time: '05:59 WIB' },
-  { name: 'Dzuhur', time: '12:03 WIB' },
-  { name: 'Ashar', time: '15:20 WIB' },
-  { name: 'Maghrib', time: '18:04 WIB' },
-  { name: 'Isya', time: '19:13 WIB' },
-];
+// Prayer Times API (Aladhan - supports current date)
+interface PrayerTimesResponse {
+  lokasi: string;
+  daerah: string;
+  jadwal: {
+    tanggal: string;
+    imsak: string;
+    subuh: string;
+    syuruq: string;
+    dzuhur: string;
+    ashar: string;
+    maghrib: string;
+    isya: string;
+  };
+}
 
-const DOWNLOADS = [
-  { id: 1, title: 'Link Penyerahan Instrumen yang Telah diisi Auditee', date: '22/07/2022' },
-  { id: 2, title: 'Formulir AMI Auditor 2022', date: '21/07/2022' },
-  { id: 3, title: 'Instrumen AMI Fakultas UPPS 2022', date: '22/07/2022' },
-  { id: 4, title: 'Instrumen AMI KPA 2022', date: '22/07/2022' },
-];
+async function getPrayerTimes(): Promise<PrayerTimesResponse | null> {
+  const date = new Date();
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  // Palembang coordinates: -2.9909, 104.7563
+  try {
+    const response = await fetch(
+      `https://api.aladhan.com/v1/calendar/${year}/${month}?latitude=-2.9909&longitude=104.7563&method=3`
+    );
+    const data = await response.json();
+    if (data.code === 200 && data.data) {
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const todayStr = `${pad(day)}-${pad(month)}-${year}`;
+      const todayData = data.data.find((d: { date: { gregorian: { date: string } } }) =>
+        d.date.gregorian.date === todayStr
+      );
+      if (todayData) {
+        const times = todayData.timings;
+        return {
+          lokasi: 'KOTA PALEMBANG',
+          daerah: 'SUMATERA SELATAN',
+          jadwal: {
+            tanggal: todayData.date.gregorian.date,
+            imsak: times.Imsak?.split(' ')[0] || '-',
+            subuh: times.Fajr?.split(' ')[0] || '-',
+            syuruq: times.Sunrise?.split(' ')[0] || '-',
+            dzuhur: times.Dhuhr?.split(' ')[0] || '-',
+            ashar: times.Asr?.split(' ')[0] || '-',
+            maghrib: times.Maghrib?.split(' ')[0] || '-',
+            isya: times.Isha?.split(' ')[0] || '-',
+          },
+        };
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
-const QUICK_ACTIVITIES = [
-  'Audit Mutu Internal', 'Selamat dan Sukses', 'Audit ISO 9001:2015',
-  'Audit Mutu Internal 2024', 'Monev GPMF', 'Workshop OBE',
-  'Refreshment Auditor AMI', 'Pelatihan Kurikulum', 'Forum Penjaminan Mutu'
-];
 
 const STATS = [
   { number: '104+', label: 'Program Studi', icon: Target },
@@ -110,6 +145,14 @@ export default function Home() {
 function BerandaContent({ onNavigate }: { onNavigate: (page: string) => void }) {
   const [latestNews, setLatestNews] = useState<BeritaResponse[]>([]);
   const [loadingNews, setLoadingNews] = useState(true);
+  const [prayerTimes, setPrayerTimes] = useState<PrayerTimesResponse | null>(null);
+  const [sambutan, setSambutan] = useState<{ nama?: string; jabatan?: string; konten?: string; foto?: string | null } | null>(null);
+  const [downloads, setDownloads] = useState<DownloadResponse[]>([]);
+  const [poll, setPoll] = useState<{ pertanyaan: string; options: Array<{ id: number; label: string; votes: number }> } | null>(null);
+  const [pollVoted, setPollVoted] = useState(false);
+  const [selectedPoll, setSelectedPoll] = useState<number | null>(null);
+  const [quickActivities, setQuickActivities] = useState<string[]>([]);
+  const [partners, setPartners] = useState<Array<{ id: number; nama: string; logo_url: string | null; link_url: string }>>([]);
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -125,6 +168,108 @@ function BerandaContent({ onNavigate }: { onNavigate: (page: string) => void }) 
     };
     fetchNews();
   }, []);
+
+  // Fetch prayer times
+  useEffect(() => {
+    const fetchPrayerTimes = async () => {
+      const times = await getPrayerTimes();
+      if (times) setPrayerTimes(times);
+    };
+    fetchPrayerTimes();
+  }, []);
+
+  // Fetch Sambutan
+  useEffect(() => {
+    const fetchSambutan = async () => {
+      const data = await getPublicSambutan();
+      if (data) setSambutan(data);
+    };
+    fetchSambutan();
+  }, []);
+
+  // Fetch Downloads
+  useEffect(() => {
+    const fetchDownloads = async () => {
+      const data = await getPublicDownloads();
+      setDownloads(data.slice(0, 4));
+    };
+    fetchDownloads();
+  }, []);
+
+  // Fetch Poll
+  useEffect(() => {
+    const fetchPoll = async () => {
+      const data = await getPublicPoll();
+      if (data) setPoll(data);
+    };
+    fetchPoll();
+  }, []);
+
+  // Fetch Quick Activities (Info Terkini)
+  useEffect(() => {
+    const fetchQuickActivities = async () => {
+      try {
+        const data = await getPublicInfoTerkini();
+        if (data.length > 0) {
+          setQuickActivities(data);
+        } else {
+          setQuickActivities([
+            'Audit Mutu Internal', 'Selamat dan Sukses', 'Audit ISO 9001:2015',
+            'Audit Mutu Internal 2024', 'Monev GPMF', 'Workshop OBE',
+            'Refreshment Auditor AMI', 'Pelatihan Kurikulum', 'Forum Penjaminan Mutu'
+          ]);
+        }
+      } catch {
+        setQuickActivities([
+          'Audit Mutu Internal', 'Selamat dan Sukses', 'Audit ISO 9001:2015',
+          'Audit Mutu Internal 2024', 'Monev GPMF', 'Workshop OBE',
+          'Refreshment Auditor AMI', 'Pelatihan Kurikulum', 'Forum Penjaminan Mutu'
+        ]);
+      }
+    };
+    fetchQuickActivities();
+  }, []);
+
+  // Fetch Partners
+  useEffect(() => {
+    const fetchPartners = async () => {
+      try {
+        const data = await getPublicPartners();
+        if (data.length > 0) {
+          setPartners(data);
+        } else {
+          setPartners([
+            { id: 1, nama: 'BAN-PT', logo_url: null, link_url: '#' },
+            { id: 2, nama: 'ISO 9001:2015', logo_url: null, link_url: '#' },
+            { id: 3, nama: 'KEMENAG RI', logo_url: null, link_url: '#' },
+            { id: 4, nama: 'AUN-QA', logo_url: null, link_url: '#' },
+          ]);
+        }
+      } catch {
+        setPartners([
+          { id: 1, nama: 'BAN-PT', logo_url: null, link_url: '#' },
+          { id: 2, nama: 'ISO 9001:2015', logo_url: null, link_url: '#' },
+          { id: 3, nama: 'KEMENAG RI', logo_url: null, link_url: '#' },
+          { id: 4, nama: 'AUN-QA', logo_url: null, link_url: '#' },
+        ]);
+      }
+    };
+    fetchPartners();
+  }, []);
+
+  const handleVote = async () => {
+    if (!selectedPoll) return;
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL || 'https://api-lpm.test/api'}/poll/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ option_id: selectedPoll }),
+      });
+      setPollVoted(true);
+    } catch (err) {
+      console.error('Gagal vote:', err);
+    }
+  };
 
   const getViews = (id: number) => {
     return parseInt(localStorage.getItem(`lpm_berita_views_${id}`) || '0');
@@ -202,17 +347,28 @@ function BerandaContent({ onNavigate }: { onNavigate: (page: string) => void }) 
         <div className="absolute top-0 left-0 w-2 h-full bg-yellow-400 rounded-l-3xl"></div>
         <div className="flex flex-col md:flex-row items-center p-8 md:p-12 gap-8">
           <div className="w-32 h-32 md:w-48 md:h-48 rounded-full border-4 border-sky-100 shadow-xl overflow-hidden flex-shrink-0 relative">
-            <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400&h=400" alt="Ketua LPM" className="w-full h-full object-cover" />
+            <img
+              src={sambutan?.foto || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400&h=400'}
+              alt={sambutan?.nama || 'Ketua LPM'}
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="flex-1 relative">
             <Quote className="absolute -top-6 -left-6 w-16 h-16 text-sky-50 opacity-50 transform -scale-x-100" />
             <h3 className="text-2xl md:text-3xl font-extrabold text-sky-900 mb-2">Sambutan Ketua LPM</h3>
-            <p className="text-lg text-slate-600 italic leading-relaxed mb-6 font-medium relative z-10">
-              "Komitmen terhadap mutu adalah sebuah perjalanan yang tidak pernah berakhir. Di LPM UIN Raden Fatah, kami mendedikasikan diri untuk memastikan bahwa setiap proses akademik berjalan sesuai standar tertinggi nasional dan internasional."
-            </p>
+            {sambutan?.konten ? (
+              <div
+                className="text-lg text-slate-600 italic leading-relaxed mb-6 font-medium relative z-10 [&>p]:mb-2"
+                dangerouslySetInnerHTML={{ __html: sambutan.konten }}
+              />
+            ) : (
+              <p className="text-lg text-slate-600 italic leading-relaxed mb-6 font-medium relative z-10">
+                "Komitmen terhadap mutu adalah sebuah perjalanan yang tidak pernah berakhir. Di LPM UIN Raden Fatah, kami mendedikasikan diri untuk memastikan bahwa setiap proses akademik berjalan sesuai standar tertinggi nasional dan internasional."
+              </p>
+            )}
             <div>
-              <p className="font-bold text-sky-900">Dr. H. Nama Pimpinan, M.Ag.</p>
-              <p className="text-sm text-yellow-600 font-semibold">Ketua Lembaga Penjaminan Mutu</p>
+              <p className="font-bold text-sky-900">{sambutan?.nama || 'Dr. H. Nama Pimpinan, M.Ag.'}</p>
+              <p className="text-sm text-yellow-600 font-semibold">{sambutan?.jabatan || 'Ketua Lembaga Penjaminan Mutu'}</p>
             </div>
           </div>
         </div>
@@ -227,7 +383,7 @@ function BerandaContent({ onNavigate }: { onNavigate: (page: string) => void }) 
           <div className="absolute left-0 top-0 w-8 h-full bg-gradient-to-r from-sky-50 to-transparent z-10"></div>
           <div className="absolute right-0 top-0 w-8 h-full bg-gradient-to-l from-sky-50 to-transparent z-10"></div>
           <div className="flex space-x-8 text-sm font-semibold text-sky-900 whitespace-nowrap overflow-x-auto py-2">
-            {QUICK_ACTIVITIES.map((activity, idx) => (
+            {quickActivities.map((activity, idx) => (
               <span key={idx} className="flex items-center cursor-pointer hover:text-sky-600 transition-colors">
                 <span className="w-2 h-2 bg-yellow-400 rounded-full mr-2 shadow-sm"></span> {activity}
               </span>
@@ -301,22 +457,34 @@ function BerandaContent({ onNavigate }: { onNavigate: (page: string) => void }) 
             <div className="bg-gradient-to-r from-sky-700 to-sky-600 text-white p-6 flex justify-between items-center relative z-10">
               <div>
                 <h4 className="font-extrabold text-lg flex items-center"><Clock className="w-5 h-5 mr-2 text-yellow-300" /> Jadwal Sholat</h4>
-                <p className="text-xs text-sky-200 mt-1 font-medium">Wilayah Palembang & Sekitarnya</p>
+                <p className="text-xs text-sky-200 mt-1 font-medium">{prayerTimes?.daerah || 'Memuat...'}</p>
               </div>
             </div>
             <div className="p-6 relative z-10">
               <div className="text-center mb-5 pb-4 border-b border-dashed border-slate-200">
-                <p className="font-bold text-sky-900 text-lg">Kota Palembang</p>
-                <span className="bg-slate-100 text-slate-600 text-[10px] px-2 py-1 rounded font-mono font-bold">2°59'LS, 104°47'BT</span>
+                <p className="font-bold text-sky-900 text-lg">{prayerTimes?.lokasi || 'Memuat...'}</p>
+                <span className="bg-slate-100 text-slate-600 text-[10px] px-2 py-1 rounded font-mono font-bold">{prayerTimes?.jadwal?.tanggal || '-'}</span>
               </div>
-              <ul className="space-y-2.5">
-                {PRAYER_TIMES.map((pt, idx) => (
-                  <li key={idx} className={`flex justify-between text-sm py-2.5 px-4 rounded-xl ${pt.name === 'Dzuhur' ? 'bg-sky-50 border border-sky-100 font-bold shadow-sm' : 'hover:bg-slate-50 border border-transparent'} transition-all`}>
-                    <span className={`font-medium ${pt.name === 'Dzuhur' ? 'text-sky-700' : 'text-slate-600'}`}>{pt.name}</span>
-                    <span className={pt.name === 'Dzuhur' ? 'text-sky-700' : 'text-sky-900 font-semibold'}>{pt.time}</span>
-                  </li>
-                ))}
-              </ul>
+              {prayerTimes?.jadwal ? (
+                <ul className="space-y-2.5">
+                  {[
+                    { name: 'Imsak', time: prayerTimes.jadwal.imsak, isDzuhur: false },
+                    { name: 'Subuh', time: prayerTimes.jadwal.subuh, isDzuhur: false },
+                    { name: 'Syuruq', time: prayerTimes.jadwal.syuruq, isDzuhur: false },
+                    { name: 'Dzuhur', time: prayerTimes.jadwal.dzuhur, isDzuhur: true },
+                    { name: 'Ashar', time: prayerTimes.jadwal.ashar, isDzuhur: false },
+                    { name: 'Maghrib', time: prayerTimes.jadwal.maghrib, isDzuhur: false },
+                    { name: 'Isya', time: prayerTimes.jadwal.isya, isDzuhur: false },
+                  ].map((pt: { name: string; time: string; isDzuhur: boolean }, idx: number) => (
+                    <li key={idx} className={`flex justify-between text-sm py-2.5 px-4 rounded-xl ${pt.isDzuhur ? 'bg-sky-50 border border-sky-100 font-bold shadow-sm' : 'hover:bg-slate-50 border border-transparent'} transition-all`}>
+                      <span className={`font-medium ${pt.isDzuhur ? 'text-sky-700' : 'text-slate-600'}`}>{pt.name}</span>
+                      <span className={pt.isDzuhur ? 'text-sky-700' : 'text-sky-900 font-semibold'}>{pt.time} WIB</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-center text-slate-500 py-4">Memuat jadwal...</div>
+              )}
             </div>
           </div>
 
@@ -327,21 +495,23 @@ function BerandaContent({ onNavigate }: { onNavigate: (page: string) => void }) 
             </div>
             <div className="p-6">
               <ul className="space-y-4">
-                {DOWNLOADS.map((doc) => (
+                {downloads.length > 0 ? downloads.map((doc) => (
                   <li key={doc.id} className="flex items-start group cursor-pointer p-2 hover:bg-slate-50 rounded-lg transition-colors">
                     <div className="w-10 h-10 rounded-lg bg-sky-50 flex items-center justify-center mr-4 group-hover:bg-yellow-100 group-hover:text-yellow-600 text-sky-500 transition-colors flex-shrink-0 shadow-sm">
                       <FileText className="w-5 h-5" />
                     </div>
                     <div>
-                      <a href="#" className="text-sm font-bold text-slate-700 group-hover:text-sky-700 line-clamp-2 leading-tight transition-colors">{doc.title}</a>
-                      <span className="text-xs text-slate-400 block mt-1.5 font-medium">{doc.date} WIB</span>
+                      <a href={doc.url || '#'} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-slate-700 group-hover:text-sky-700 line-clamp-2 leading-tight transition-colors">{doc.judul}</a>
+                      <span className="text-xs text-slate-400 block mt-1.5 font-medium">{doc.tanggal}</span>
                     </div>
                   </li>
-                ))}
+                )) : (
+                  <li className="text-center text-slate-500 py-4">Belum ada dokumen unduhan</li>
+                )}
               </ul>
-              <button className="w-full mt-6 py-3 bg-slate-50 text-sky-700 text-sm font-bold rounded-xl hover:bg-sky-600 hover:text-white transition-all shadow-sm border border-slate-200 hover:border-transparent">
+              <Link to="/peraturan" className="w-full mt-6 py-3 bg-slate-50 text-sky-700 text-sm font-bold rounded-xl hover:bg-sky-600 hover:text-white transition-all shadow-sm border border-slate-200 hover:border-transparent flex items-center justify-center">
                 Lihat Semua Dokumen
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -352,24 +522,39 @@ function BerandaContent({ onNavigate }: { onNavigate: (page: string) => void }) 
             </div>
             <div className="p-6 bg-gradient-to-b from-white to-slate-50">
               <p className="text-sm font-bold text-sky-900 mb-5 leading-relaxed text-center">
-                "Bagaimana Pendapat Anda tentang pelayanan dan informasi Website LPM ini?"
+                "{poll?.pertanyaan || 'Bagaimana Pendapat Anda tentang pelayanan dan informasi Website LPM ini?'}"
               </p>
-              <form className="space-y-3 mb-2" onSubmit={(e) => e.preventDefault()}>
-                {['Sangat Bagus & Membantu', 'Cukup Bagus', 'Biasa Saja', 'Perlu Perbaikan'].map((option, idx) => (
-                  <label key={idx} className="flex items-center space-x-3 cursor-pointer p-3.5 rounded-xl border border-slate-200 hover:border-sky-300 hover:bg-sky-50 transition-all bg-white shadow-sm hover:shadow-md">
-                    <input type="radio" name="poll" className="w-4 h-4 text-sky-600 focus:ring-sky-500" />
-                    <span className="text-sm text-slate-700 font-bold">{option}</span>
+              <div className="space-y-3 mb-2">
+                {poll?.options && poll.options.length > 0 ? poll.options.map((option) => (
+                  <label key={option.id} className="flex items-center space-x-3 cursor-pointer p-3.5 rounded-xl border border-slate-200 hover:border-sky-300 hover:bg-sky-50 transition-all bg-white shadow-sm hover:shadow-md">
+                    <input
+                      type="radio"
+                      name="poll"
+                      checked={selectedPoll === option.id}
+                      onChange={() => setSelectedPoll(option.id)}
+                      disabled={pollVoted}
+                      className="w-4 h-4 text-sky-600 focus:ring-sky-500"
+                    />
+                    <span className="text-sm text-slate-700 font-bold">{option.label}</span>
                   </label>
-                ))}
-                <div className="pt-5 flex flex-col space-y-3">
-                  <button type="button" className="w-full bg-sky-600 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-sky-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                )) : (
+                  <div className="text-center text-slate-500 py-4">Belum ada poll aktif</div>
+                )}
+              </div>
+              <div className="pt-5 flex flex-col space-y-3">
+                {pollVoted ? (
+                  <div className="text-center text-green-600 font-bold py-2">Terima kasih atas voting Anda!</div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleVote}
+                    disabled={!selectedPoll}
+                    className="w-full bg-sky-600 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-sky-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     Kirim Jawaban
                   </button>
-                  <button type="button" className="w-full bg-slate-100 text-slate-600 py-3 rounded-xl text-sm font-bold hover:bg-slate-200 transition-colors">
-                    Lihat Hasil Polling
-                  </button>
-                </div>
-              </form>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -379,10 +564,22 @@ function BerandaContent({ onNavigate }: { onNavigate: (page: string) => void }) 
       <div className="mt-16 text-center">
         <h3 className="text-xl font-bold text-slate-400 uppercase tracking-widest mb-8">Diakui Oleh & Tersertifikasi</h3>
         <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-          <div className="flex items-center space-x-2 font-black text-2xl text-slate-800"><Building className="w-8 h-8" /> BAN-PT</div>
-          <div className="flex items-center space-x-2 font-black text-2xl text-slate-800"><Globe className="w-8 h-8" /> ISO 9001:2015</div>
-          <div className="flex items-center space-x-2 font-black text-2xl text-slate-800"><Building className="w-8 h-8" /> KEMENAG RI</div>
-          <div className="flex items-center space-x-2 font-black text-2xl text-slate-800"><Globe className="w-8 h-8" /> AUN-QA</div>
+          {partners.map((partner) => (
+            <a
+              key={partner.id}
+              href={partner.link_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-2 font-black text-2xl text-slate-800 hover:text-sky-600"
+            >
+              {partner.logo_url ? (
+                <img src={partner.logo_url} alt={partner.nama} className="w-8 h-8 object-contain" />
+              ) : (
+                <Building className="w-8 h-8" />
+              )}
+              <span>{partner.nama}</span>
+            </a>
+          ))}
         </div>
       </div>
 

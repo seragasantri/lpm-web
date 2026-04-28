@@ -4,7 +4,6 @@ import { getUsers, createUser, updateUser, deleteUser, getRoles } from '../../..
 import type { User, Role } from '../../../lib/types';
 import { Users, Plus, Pencil, Trash2, X, Loader, Shield, UserCheck, UserX, Save, Check, ShieldCheck } from 'lucide-react';
 import DataTable from '../../components/DataTable';
-import SelectInput from '../../components/SelectInput';
 
 // Group permissions by module for display
 type GroupedPerms = Record<string, string[]>;

@@ -1,76 +1,7 @@
-import Layout from '../components/Layout';
+import { useEffect, useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-interface StaffMember {
-  name: string;
-  position: string;
-  department: string;
-  photoId: string;
-}
-
-const staffMembers: StaffMember[] = [
-  {
-    name: 'Dr. H. Ahmad Hidayat, M.Ag.',
-    position: 'Ketua LPM',
-    department: 'Pimpinan',
-    photoId: '1560250097',
-  },
-  {
-    name: 'Dr. Siti Aminah, M.Pd.',
-    position: 'Sekretaris',
-    department: 'Administrasi',
-    photoId: '1573496359',
-  },
-  {
-    name: 'Prof. Dr. Budi Santoso, M.Si.',
-    position: 'Kepala Bagian Akreditasi',
-    department: 'Akreditasi',
-    photoId: '1472099645',
-  },
-  {
-    name: 'Dr. Hasan Basri, M.Hum.',
-    position: 'Kepala Bagian Mutu Internal',
-    department: 'Mutu Internal',
-    photoId: '1507003211169',
-  },
-  {
-    name: 'Muhammad Yusuf, S.Pd., M.M.',
-    position: 'Staf Administrasi',
-    department: 'Administrasi',
-    photoId: '1500648767791',
-  },
-  {
-    name: 'Dewi Rahmawati, S.Kom., M.T.',
-    position: 'Staf Keuangan',
-    department: 'Keuangan',
-    photoId: '1552058544',
-  },
-  {
-    name: 'Ir. Abdul Rahman, M.T.',
-    position: 'Auditor Mutu Internal',
-    department: 'Mutu Internal',
-    photoId: '1568602471122',
-  },
-  {
-    name: 'Fitri Handayani, S.Sos., M.AP.',
-    position: 'Staf Dokumentasi & Publikasi',
-    department: 'Publikasi',
-    photoId: '1519085360753',
-  },
-  {
-    name: 'Ahmad Fauzi, S.E., M.M.',
-    position: 'Staf Perencanaan',
-    department: 'Perencanaan',
-    photoId: '1560250097',
-  },
-  {
-    name: 'Nur Halimah, S.Pd., M.Sc.',
-    position: 'Staf Pengendalian Mutu',
-    department: 'Mutu Internal',
-    photoId: '1573496359',
-  },
-];
+import { getPublicStafs, type StafResponse } from '../lib/api';
 
 const departmentColors: Record<string, string> = {
   Pimpinan: 'bg-red-100 text-red-700',
@@ -83,6 +14,17 @@ const departmentColors: Record<string, string> = {
 };
 
 export default function StafPage() {
+  const [stafs, setStafs] = useState<StafResponse[]>([]);
+
+  useEffect(() => {
+    document.title = 'Pimpinan dan Staf :: LPM UIN Raden Fatah Palembang';
+    const fetchData = async () => {
+      const data = await getPublicStafs();
+      setStafs(data);
+    };
+    fetchData();
+  }, []);
+
   return (
     <>
       {/* Page Header */}
@@ -115,27 +57,26 @@ export default function StafPage() {
 
         {/* Staff Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {staffMembers.map((staff, index) => (
+          {stafs.map((staf) => (
             <div
-              key={index}
+              key={staf.id}
               className="bg-white rounded-xl border border-slate-200 p-6 text-center shadow-sm hover:shadow-md transition-shadow"
             >
               <div className="mb-4 flex justify-center">
                 <img
-                  src={`https://images.unsplash.com/photo-${staff.photoId}?auto=format&fit=crop&q=80&w=200&h=200`}
-                  alt={staff.name}
+                  src={staf.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(staf.nama)}&background=0284c7&color=fff&size=200`}
+                  alt={staf.nama}
                   className="w-28 h-28 rounded-full object-cover ring-4 ring-slate-100"
                 />
               </div>
               <h3 className="font-bold text-slate-800 text-lg leading-tight mb-1">
-                {staff.name}
+                {staf.nama}
               </h3>
-              <p className="text-sky-600 font-medium mb-3">{staff.position}</p>
+              <p className="text-sky-600 font-medium mb-3">{staf.jabatan}</p>
               <span
-                className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${departmentColors[staff.department] || 'bg-slate-100 text-slate-600'
-                  }`}
+                className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${departmentColors[staf.program_studi || ''] || 'bg-slate-100 text-slate-600'}`}
               >
-                {staff.department}
+                {staf.program_studi || '-'}
               </span>
             </div>
           ))}

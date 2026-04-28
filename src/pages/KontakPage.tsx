@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'react';
 import { MapPin, Phone, Mail, Clock } from 'lucide-react';
 import { contactInfo } from '../data/navigation';
-import { getKontakData } from '../lib/mockData';
-import type { KontakData } from '../lib/types';
+import { getPublicKontak } from '../lib/api';
+import Layout from '../components/Layout';
 
 export default function KontakPage() {
   useEffect(() => { document.title = 'Kontak :: LPM UIN Raden Fatah Palembang'; }, []);
 
-  const [kontak, setKontak] = useState<KontakData | null>(null);
+  const [kontak, setKontak] = useState<{ alamat: string; gedung?: string; telepon: string; email: string } | null>(null);
 
   useEffect(() => {
-    getKontakData().then(setKontak);
+    const fetchData = async () => {
+      const data = await getPublicKontak();
+      if (data) setKontak(data);
+    };
+    fetchData();
   }, []);
 
-  const mapsUrl = kontak?.mapsUrl || '';
+  const mapsUrl = ''; // Can be extended to include maps_url from API
 
   return (
     <div>

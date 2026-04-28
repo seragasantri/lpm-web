@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import { getRoles, createRole, updateRole, deleteRole, getPermissions } from '../../../lib/mockData';
-import type { Role, Permission } from '../../../lib/types';
-import { Shield, Plus, Pencil, Trash2, X, Loader, Save, Check, ShieldCheck, ChevronDown, ChevronRight } from 'lucide-react';
+import { getRoles, createRole, updateRole, deleteRole, getPermissions, type RoleResponse } from '../../../lib/api';
+import DataTable from '../../components/DataTable';
+import { Shield, Plus, Pencil, Trash2, X, Save, Check, ShieldCheck, ChevronDown, ChevronRight } from 'lucide-react';
 
-// Group permissions by module
-type GroupedPermissions = Record<string, Permission[]>;
+type GroupedPermissions = Record<string, { id: number; name: string; modul?: string; aplikasi: string }[]>;
 
-function groupByModule(permissions: Permission[]): GroupedPermissions {
+function groupByModule(permissions: { id: number; name: string; modul?: string; aplikasi: string }[]): GroupedPermissions {
   return permissions.reduce((acc, p) => {
-    const key = p.modul;
+    const key = p.modul || p.aplikasi;
     if (!acc[key]) acc[key] = [];
     acc[key].push(p);
     return acc;
@@ -20,14 +19,13 @@ export default function RoleIndex() {
   useEffect(() => { document.title = 'Manajemen Role :: LPM Admin'; }, []);
   const { hasPermission } = useAuth();
 
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [roles, setRoles] = useState<RoleResponse[]>([]);
+  const [permissions, setPermissions] = useState<{ id: number; name: string; modul?: string; aplikasi: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [editRole, setEditRole] = useState<Role | null>(null);
-  const [form, setForm] = useState({ nama: '', permissions: [] as string[] });
+  const [editRole, setEditRole] = useState<RoleResponse | null>(null);
+  const [form, setForm] = useState({ name: '', permissions: [] as string[] });
   const [saving, setSaving] = useState(false);
-  const [search, setSearch] = useState('');
 
   useEffect(() => {
     if (!hasPermission('user.read')) { setLoading(false); return; }
@@ -40,34 +38,43 @@ export default function RoleIndex() {
 
   const openCreate = () => {
     setEditRole(null);
-    setForm({ nama: '', permissions: [] });
+    setForm({ name: '', permissions: [] });
     setShowModal(true);
   };
 
-  const openEdit = (r: Role) => {
+  const openEdit = (r: RoleResponse) => {
     setEditRole(r);
-    setForm({ nama: r.nama, permissions: [...r.permissions] });
+    setForm({
+      name: r.name,
+      permissions: r.permissions.map(p => p.name),
+    });
     setShowModal(true);
   };
 
   const groupedPerms = groupByModule(permissions);
 
-  const togglePermission = (permId: string) => {
+  const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    setExpandedModules(Object.keys(groupedPerms).reduce((acc, m) => ({ ...acc, [m]: true }), {}));
+  }, [permissions]);
+
+  const togglePermission = (permName: string) => {
     setForm(prev => ({
       ...prev,
-      permissions: prev.permissions.includes(permId)
-        ? prev.permissions.filter(p => p !== permId)
-        : [...prev.permissions, permId],
+      permissions: prev.permissions.includes(permName)
+        ? prev.permissions.filter(p => p !== permName)
+        : [...prev.permissions, permName],
     }));
   };
 
   const toggleModule = (modul: string) => {
     const modulePerms = groupedPerms[modul] || [];
-    const allActive = modulePerms.every(p => form.permissions.includes(p.id));
+    const allActive = modulePerms.every(p => form.permissions.includes(p.name));
     if (allActive) {
-      setForm(prev => ({ ...prev, permissions: prev.permissions.filter(p => !modulePerms.some(mp => mp.id === p)) }));
+      setForm(prev => ({ ...prev, permissions: prev.permissions.filter(p => !modulePerms.some(mp => mp.name === p)) }));
     } else {
-      const missing = modulePerms.filter(p => !form.permissions.includes(p.id)).map(p => p.id);
+      const missing = modulePerms.filter(p => !form.permissions.includes(p.name)).map(p => p.name);
       setForm(prev => ({ ...prev, permissions: [...prev.permissions, ...missing] }));
     }
   };
@@ -76,13 +83,9 @@ export default function RoleIndex() {
     if (form.permissions.length === permissions.length) {
       setForm(prev => ({ ...prev, permissions: [] }));
     } else {
-      setForm(prev => ({ ...prev, permissions: permissions.map(p => p.id) }));
+      setForm(prev => ({ ...prev, permissions: permissions.map(p => p.name) }));
     }
   };
-
-  const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>(
-    Object.keys(groupedPerms).reduce((acc, m) => ({ ...acc, [m]: true }), {})
-  );
 
   const toggleExpand = (modul: string) => {
     setExpandedModules(prev => ({ ...prev, [modul]: !prev[modul] }));
@@ -93,10 +96,10 @@ export default function RoleIndex() {
     setSaving(true);
     try {
       if (editRole) {
-        const updated = await updateRole(editRole.id, { nama: form.nama, permissions: form.permissions });
-        if (updated) setRoles(prev => prev.map(r => r.id === updated.id ? updated : r));
+        const updated = await updateRole(editRole.id, { name: form.name, permissions: form.permissions });
+        setRoles(prev => prev.map(r => r.id === updated.id ? updated : r));
       } else {
-        const created = await createRole({ nama: form.nama, permissions: form.permissions });
+        const created = await createRole({ name: form.name, permissions: form.permissions });
         setRoles(prev => [...prev, created]);
       }
       setShowModal(false);
@@ -105,19 +108,15 @@ export default function RoleIndex() {
     }
   };
 
-  const handleDelete = async (r: Role) => {
-    if (!confirm(`Yakin ingin menghapus role "${r.nama}"?`)) return;
+  const handleDelete = async (r: RoleResponse) => {
+    if (!confirm(`Yakin ingin menghapus role "${r.name}"?`)) return;
     await deleteRole(r.id);
     setRoles(prev => prev.filter(x => x.id !== r.id));
   };
 
-  const filtered = roles.filter(r => r.nama.toLowerCase().includes(search.toLowerCase()));
-
-  if (loading) return (
-    <div className="flex items-center justify-center py-20 text-slate-400">
-      <Loader className="w-6 h-6 animate-spin" />
-    </div>
-  );
+  const formatDate = (ts: string) => {
+    return new Date(ts).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
 
   if (!hasPermission('user.read')) return (
     <div className="p-6">
@@ -128,6 +127,33 @@ export default function RoleIndex() {
       </div>
     </div>
   );
+
+  const columns = [
+    {
+      key: 'name',
+      label: 'Nama Role',
+      sortable: true,
+      render: (_: unknown, item: RoleResponse) => (
+        <span className="font-semibold text-slate-800">{item.name}</span>
+      ),
+    },
+    {
+      key: 'permissions',
+      label: 'Jumlah Permission',
+      sortable: false,
+      render: (_: unknown, item: RoleResponse) => (
+        <span className="text-slate-600">{item.permissions.length} izin</span>
+      ),
+    },
+    {
+      key: 'created_at',
+      label: 'Tanggal Dibuat',
+      sortable: true,
+      render: (_: unknown, item: RoleResponse) => (
+        <span className="text-slate-500 text-xs">{formatDate(item.created_at)}</span>
+      ),
+    },
+  ];
 
   return (
     <div className="p-6 space-y-6">
@@ -148,51 +174,15 @@ export default function RoleIndex() {
         )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-4 flex items-center gap-4 border-b border-slate-100">
-          <input type="text" placeholder="Cari role..." value={search} onChange={e => setSearch(e.target.value)} className="flex-1 max-w-sm px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">Nama Role</th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">Jumlah Permission</th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">Tanggal Dibuat</th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600 w-28">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(r => (
-                <tr key={r.id} className="border-b border-slate-50 hover:bg-sky-50/50 transition-colors">
-                  <td className="px-4 py-3 font-semibold text-slate-800">{r.nama}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.permissions.length} izin</td>
-                  <td className="px-4 py-3 text-slate-500 text-xs">{new Date(r.createdAt).toLocaleDateString('id-ID')}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      {hasPermission('user.update') && (
-                        <button onClick={() => openEdit(r)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
-                          <Pencil size={16} />
-                        </button>
-                      )}
-                      {hasPermission('user.delete') && (
-                        <button onClick={() => handleDelete(r)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-12 text-center text-slate-400">Belum ada data role.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        columns={columns}
+        data={roles}
+        onEdit={hasPermission('user.update') ? openEdit : undefined}
+        onDelete={hasPermission('user.delete') ? handleDelete : undefined}
+        searchable={['name']}
+        emptyMessage="Belum ada data role."
+        loading={loading}
+      />
 
       {/* Modal */}
       {showModal && (
@@ -206,8 +196,8 @@ export default function RoleIndex() {
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nama Role</label>
                 <input
-                  value={form.nama}
-                  onChange={e => setForm(p => ({ ...p, nama: e.target.value }))}
+                  value={form.name}
+                  onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                   required
                   className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                   placeholder="Contoh: Editor, Viewer, Admin"
@@ -222,41 +212,34 @@ export default function RoleIndex() {
                 </div>
                 <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
                   {Object.entries(groupedPerms).map(([modul, perms]) => {
-                    const allActive = perms.every(p => form.permissions.includes(p.id));
-                    const someActive = perms.some(p => form.permissions.includes(p.id));
+                    const allActive = perms.every(p => form.permissions.includes(p.name));
+                    const someActive = perms.some(p => form.permissions.includes(p.name));
                     const isExpanded = expandedModules[modul] ?? true;
 
                     return (
                       <div key={modul} className="border border-slate-200 rounded-xl overflow-hidden">
-                        {/* Module Header */}
                         <button
                           type="button"
                           onClick={() => toggleExpand(modul)}
                           className="w-full flex items-center gap-3 px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors"
                         >
                           <span className="text-slate-400">{isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</span>
-                          <label
-                            onClick={e => e.stopPropagation()}
-                            className="flex items-center gap-2 cursor-pointer"
+                          <div
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${allActive ? 'bg-sky-500 border-sky-500' : someActive ? 'bg-sky-500/50 border-sky-500' : 'border-slate-300 bg-white'}`}
+                            onClick={(e) => { e.stopPropagation(); toggleModule(modul); }}
                           >
-                            <div
-                              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${allActive ? 'bg-sky-500 border-sky-500' : someActive ? 'bg-sky-500/50 border-sky-500' : 'border-slate-300 bg-white'}`}
-                              onClick={() => toggleModule(modul)}
-                            >
-                              {(allActive || someActive) && <Check size={12} className="text-white" />}
-                            </div>
-                          </label>
+                            {(allActive || someActive) && <Check size={12} className="text-white" />}
+                          </div>
                           <span className="font-semibold text-slate-700 text-sm">{modul}</span>
                           <span className="text-xs text-slate-400">({perms.length} izin)</span>
                           {someActive && !allActive && (
                             <span className="ml-auto text-xs text-sky-600 font-medium">Sebagian</span>
                           )}
                         </button>
-                        {/* Permission Items */}
                         {isExpanded && (
                           <div className="px-4 py-3 bg-white border-t border-slate-100 grid grid-cols-2 gap-2">
                             {perms.map(p => {
-                              const active = form.permissions.includes(p.id);
+                              const active = form.permissions.includes(p.name);
                               return (
                                 <label
                                   key={p.id}
@@ -265,11 +248,11 @@ export default function RoleIndex() {
                                   <input
                                     type="checkbox"
                                     checked={active}
-                                    onChange={() => togglePermission(p.id)}
+                                    onChange={() => togglePermission(p.name)}
                                     className="sr-only"
                                   />
                                   {active && <Check size={12} className="text-sky-600 shrink-0" />}
-                                  <span className="text-xs font-medium">{p.nama}</span>
+                                  <span className="text-xs font-medium">{p.name}</span>
                                 </label>
                               );
                             })}
@@ -283,7 +266,7 @@ export default function RoleIndex() {
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">Batal</button>
                 <button type="submit" disabled={saving} className="flex items-center gap-2 px-5 py-2.5 bg-sky-600 text-white rounded-lg text-sm font-semibold hover:bg-sky-700 disabled:opacity-60 transition-colors">
-                  {saving ? <Loader className="w-4 h-4 animate-spin" /> : <Save size={16} />} Simpan
+                  {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save size={16} />} Simpan
                 </button>
               </div>
             </form>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Loader, Phone, MapPin, Mail, Globe } from 'lucide-react';
-import { getKontakData, updateKontakData } from '../../../lib/mockData';
+import { getKontak, updateKontak } from '../../../lib/api';
 
 export default function ProfilKontak() {
   const navigate = useNavigate();
@@ -20,14 +20,18 @@ export default function ProfilKontak() {
 
   useEffect(() => {
     document.title = 'Edit Kontak - Admin LPM';
-    getKontakData().then((data) => {
-      setForm({
-        alamat: data.alamat,
-        gedung: data.gedung,
-        telepon: data.telepon,
-        email: data.email,
-        mapsUrl: data.mapsUrl ?? '',
-      });
+    getKontak().then((data) => {
+      if (data) {
+        setForm({
+          alamat: data.alamat || '',
+          gedung: data.gedung || '',
+          telepon: data.telepon || '',
+          email: data.email || '',
+          mapsUrl: data.maps_url || '',
+        });
+      }
+      setLoading(false);
+    }).catch(() => {
       setLoading(false);
     });
   }, []);
@@ -48,12 +52,12 @@ export default function ProfilKontak() {
 
     setSaving(true);
     try {
-      await updateKontakData({
+      await updateKontak({
         alamat: form.alamat.trim(),
-        gedung: form.gedung.trim(),
+        gedung: form.gedung.trim() || '',
         telepon: form.telepon.trim(),
-        email: form.email.trim(),
-        mapsUrl: form.mapsUrl.trim() || undefined,
+        email: form.email.trim() || '',
+        maps_url: form.mapsUrl.trim() || '',
       });
       setSaved(true);
       setTimeout(() => navigate('/admin'), 1500);

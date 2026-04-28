@@ -2,16 +2,15 @@ import { useEffect, useState } from 'react';
 import { Quote, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { getSambutan } from '../lib/mockData';
-import type { Sambutan } from '../lib/types';
+import { getPublicSambutan } from '../lib/api';
 
 export default function SambutanPage() {
   useEffect(() => { document.title = 'Sambutan Ketua LPM :: LPM UIN Raden Fatah Palembang'; }, []);
 
-  const [sambutan, setSambutan] = useState<Sambutan | null>(null);
+  const [sambutan, setSambutan] = useState<{ nama?: string; jabatan?: string; konten?: string; foto?: string | null } | null>(null);
 
   useEffect(() => {
-    getSambutan().then(setSambutan);
+    getPublicSambutan().then(setSambutan).catch(() => setSambutan(null));
   }, []);
 
   return (
@@ -58,9 +57,16 @@ export default function SambutanPage() {
 
                 {/* Quote text and signature */}
                 <div className="flex-1">
-                  <blockquote className="text-xl md:text-2xl italic text-slate-600 leading-relaxed mb-8">
-                    {sambutan?.konten || '"Komitmen terhadap mutu adalah sebuah perjalanan yang tidak pernah berakhir. Di LPM UIN Raden Fatah, kami mendedikasikan diri untuk memastikan bahwa setiap proses akademik berjalan sesuai standar tertinggi nasional dan internasional."'}
-                  </blockquote>
+                  {sambutan?.konten ? (
+                    <div
+                      className="text-xl md:text-2xl italic text-slate-600 leading-relaxed mb-8 [&>p]:mb-4"
+                      dangerouslySetInnerHTML={{ __html: sambutan.konten }}
+                    />
+                  ) : (
+                    <blockquote className="text-xl md:text-2xl italic text-slate-600 leading-relaxed mb-8">
+                      "Komitmen terhadap mutu adalah sebuah perjalanan yang tidak pernah berakhir. Di LPM UIN Raden Fatah, kami mendedikasikan diri untuk memastikan bahwa setiap proses akademik berjalan sesuai standar tertinggi nasional dan internasional."
+                    </blockquote>
+                  )}
 
                   <div className="border-t border-slate-200 pt-6">
                     <p className="text-slate-800 font-semibold text-lg">

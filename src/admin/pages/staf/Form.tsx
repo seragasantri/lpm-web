@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Users, Save, AlertCircle, UserCircle2, ImageIcon } from 'lucide-react';
-import type { Staf } from '../../../lib/types';
-import { getStaf, createStaf, updateStaf } from '../../../lib/mockData';
+import { getStafs, getStafById, createStaf, updateStaf } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
 import FileUpload from '../../components/FileUpload';
 
 interface FormState {
   nama: string;
   jabatan: string;
+  program_studi: string;
   email: string;
   foto: string;
   urutan: number;
@@ -17,6 +17,7 @@ interface FormState {
 const EMPTY_FORM: FormState = {
   nama: '',
   jabatan: '',
+  program_studi: '',
   email: '',
   foto: '',
   urutan: 1,
@@ -35,26 +36,28 @@ export default function StafForm({ editId }: { editId?: string }) {
 
   useEffect(() => {
     if (!editId) {
-      getStaf().then((list) => {
+      getStafs().then((list) => {
         const maxUrutan = list.reduce((max, s) => Math.max(max, s.urutan), 0);
         setForm((prev) => ({ ...prev, urutan: maxUrutan + 1 }));
       });
       return;
     }
     setFetching(true);
-    getStaf().then((list) => {
-      const found = list.find((s) => s.id === editId);
-      if (found) {
-        setForm({
-          nama: found.nama,
-          jabatan: found.jabatan,
-          email: found.email ?? '',
-          foto: found.foto ?? '',
-          urutan: found.urutan,
-        });
-      } else {
-        setError('Data staf tidak ditemukan.');
-      }
+    const id = parseInt(editId);
+    if (isNaN(id)) {
+      setError('ID staf tidak valid.');
+      setFetching(false);
+      return;
+    }
+    getStafById(id).then((found) => {
+      setForm({
+        nama: found.nama,
+        jabatan: found.jabatan,
+        program_studi: found.program_studi || '',
+        email: found.email || '',
+        foto: found.foto || '',
+        urutan: found.urutan,
+      });
     }).catch(() => setError('Gagal memuat data.')).finally(() => setFetching(false));
   }, [editId]);
 
@@ -76,16 +79,17 @@ export default function StafForm({ editId }: { editId?: string }) {
 
     setLoading(true);
     try {
-      const payload: Omit<Staf, 'id'> = {
+      const payload = {
         nama: form.nama.trim(),
         jabatan: form.jabatan.trim(),
+        program_studi: form.program_studi.trim() || undefined,
         email: form.email.trim() || undefined,
         foto: form.foto.trim() || undefined,
         urutan: form.urutan,
       };
 
       if (isEdit && editId) {
-        await updateStaf(editId, payload);
+        await updateStaf(parseInt(editId), payload);
       } else {
         await createStaf(payload);
       }
@@ -202,6 +206,21 @@ export default function StafForm({ editId }: { editId?: string }) {
                   placeholder="Contoh: Ketua LPM"
                   className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all"
                   required
+                />
+              </div>
+
+              {/* Program Studi */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  Unit/Bagian
+                </label>
+                <input
+                  type="text"
+                  name="program_studi"
+                  value={form.program_studi}
+                  onChange={handleChange}
+                  placeholder="Contoh: Administrasi, Keuangan, Mutu Internal"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all"
                 />
               </div>
 

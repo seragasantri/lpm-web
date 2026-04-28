@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Loader, Target, Plus, Trash2 } from 'lucide-react';
-import { getVisiMisi, updateVisiMisi } from '../../../lib/mockData';
+import { getVisiMisi, updateVisiMisi } from '../../../lib/api';
 
 interface MisiItem {
-  id: string;
+  id?: number;
   no: number;
   judul: string;
   deskripsi: string;
@@ -20,13 +20,15 @@ export default function ProfilVisiMisi() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
-  const uid = () => Math.random().toString(36).substr(2, 9);
-
   useEffect(() => {
     document.title = 'Edit Visi Misi - Admin LPM';
     getVisiMisi().then((data) => {
-      setVisi(data.visi);
-      setMisi(data.misi.map((m) => ({ ...m })));
+      if (data) {
+        setVisi(data.visi || '');
+        setMisi((data.items || []).map((m) => ({ id: m.id, no: m.no, judul: m.judul, deskripsi: m.deskripsi || '' })));
+      }
+      setLoading(false);
+    }).catch(() => {
       setLoading(false);
     });
   }, []);
@@ -35,7 +37,7 @@ export default function ProfilVisiMisi() {
     const newNo = misi.length + 1;
     setMisi((prev) => [
       ...prev,
-      { id: uid(), no: newNo, judul: '', deskripsi: '' },
+      { id: undefined, no: newNo, judul: '', deskripsi: '' },
     ]);
   };
 
@@ -46,7 +48,7 @@ export default function ProfilVisiMisi() {
     });
   };
 
-  const handleMisiChange = (idx: number, field: keyof MisiItem, value: string) => {
+  const handleMisiChange = (idx: number, field: keyof MisiItem, value: string | number) => {
     setMisi((prev) => {
       const updated = [...prev];
       updated[idx] = { ...updated[idx], [field]: field === 'no' ? Number(value) : value };
@@ -63,7 +65,7 @@ export default function ProfilVisiMisi() {
     try {
       await updateVisiMisi({
         visi: visi.trim(),
-        misi: misi.map((m, i) => ({ ...m, no: i + 1 })),
+        misi: misi.map((m, i) => ({ id: m.id, no: i + 1, judul: m.judul, deskripsi: m.deskripsi })),
       });
       setSaved(true);
       setTimeout(() => navigate('/admin'), 1500);

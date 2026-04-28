@@ -184,6 +184,7 @@ export default function SelectInput({
           required={required}
           disabled={disabled}
           value={value}
+          onChange={() => {}} // TomSelect manages its own state
         >
           <option value="">{placeholder}</option>
           {options.map(opt => (

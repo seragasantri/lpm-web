@@ -1,11 +1,27 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Users, Download, ChevronLeft, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getPublicStruktur } from '../lib/api';
 
 export default function StrukturPage() {
   useEffect(() => { document.title = 'Struktur Organisasi :: LPM UIN Raden Fatah Palembang'; }, []);
+
+  const [struktur, setStruktur] = useState<{ deskripsi?: string; gambar?: string } | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await getPublicStruktur();
+      if (data) setStruktur(data);
+    };
+    fetchData();
+  }, []);
+
   const handleDownload = () => {
-    alert('Fitur download akan segera tersedia.');
+    if (struktur?.gambar) {
+      window.open(struktur.gambar, '_blank');
+    } else {
+      alert('Struktur organisasi belum tersedia.');
+    }
   };
 
   return (
@@ -31,31 +47,46 @@ export default function StrukturPage() {
         {/* Introduction */}
         <div className="text-center max-w-3xl mx-auto">
           <p className="text-lg text-slate-600 leading-relaxed">
-            Struktur Organisasi Lembaga Penjaminan Mutu UIN Raden Fatah Palembang disusun
-            untuk memastikan terlaksananya fungsi penjaminan mutu secara optimal di
-            seluruh unit kerja dalam lingkungan kampus.
+            {struktur?.deskripsi || 'Struktur Organisasi Lembaga Penjaminan Mutu UIN Raden Fatah Palembang disusun untuk memastikan terlaksananya fungsi penjaminan mutu secara optimal di seluruh unit kerja dalam lingkungan kampus.'}
           </p>
         </div>
 
-        {/* Org Chart Placeholder */}
-        <div className="bg-white rounded-2xl border-2 border-dashed border-slate-300 p-16 text-center">
-          <div className="flex flex-col items-center gap-6">
-            <div className="bg-sky-50 rounded-full p-6">
-              <Users className="w-16 h-16 text-sky-400" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-slate-800 mb-2">Struktur Organisasi</h2>
-              <p className="text-slate-500">Gambar bagan akan ditampilkan di sini</p>
-            </div>
+        {/* Org Chart */}
+        {struktur?.gambar ? (
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 text-center">
+            <img
+              src={struktur.gambar}
+              alt="Struktur Organisasi LPM"
+              className="max-w-full h-auto rounded-lg"
+            />
             <button
               onClick={handleDownload}
-              className="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm"
+              className="mt-6 inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm"
             >
               <Download className="w-5 h-5" />
               Download Struktur Organisasi
             </button>
           </div>
-        </div>
+        ) : (
+          <div className="bg-white rounded-2xl border-2 border-dashed border-slate-300 p-16 text-center">
+            <div className="flex flex-col items-center gap-6">
+              <div className="bg-sky-50 rounded-full p-6">
+                <Users className="w-16 h-16 text-sky-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-800 mb-2">Struktur Organisasi</h2>
+                <p className="text-slate-500">Gambar bagan akan ditampilkan di sini</p>
+              </div>
+              <button
+                onClick={handleDownload}
+                className="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm"
+              >
+                <Download className="w-5 h-5" />
+                Download Struktur Organisasi
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Info Note */}
         <div className="bg-sky-50 rounded-xl border border-sky-200 p-6 flex items-start gap-4">

@@ -1,34 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Target, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getPublicVisiMisi } from '../lib/api';
 
 interface MissionItem {
-  number: number;
-  title: string;
-  description: string;
+  no: number;
+  judul: string;
+  deskripsi: string;
 }
 
-const missions: MissionItem[] = [
-  {
-    number: 1,
-    title: 'Penjaminan Mutu Internal',
-    description: 'Melaksanakan sistem penjaminan mutu internal secara terencana dan kontinyu dengan mengacu kepada standar nasional dan internasional.',
-  },
-  {
-    number: 2,
-    title: 'Akreditasi Eksternal',
-    description: 'Mengkoordinir dan menyiapkan kegiatan penjaminan mutu eksternal melalui akreditasi, baik di tingkat program studi maupun institusi.',
-  },
-  {
-    number: 3,
-    title: 'Koordinasi Civitas Akademika',
-    description: 'Mengkoordinir dan mengarahkan semua bagian/civitas akademik UIN Raden Fatah untuk memenuhi seluruh aspek standar mutu nasional maupun internasional.',
-  },
-  {
-    number: 4,
-    title: 'Sistem Manajemen ISO',
-    description: 'Mengkoordinir pelaksanaan penjaminan mutu sistem manajemen (ISO 9001:2015/IWA2) di seluruh bagian UIN Raden Fatah Palembang.',
-  },
+const defaultMissions: MissionItem[] = [
+  { no: 1, judul: 'Penjaminan Mutu Internal', deskripsi: 'Melaksanakan sistem penjaminan mutu internal secara terencana dan kontinyu dengan mengacu kepada standar nasional dan internasional.' },
+  { no: 2, judul: 'Akreditasi Eksternal', deskripsi: 'Mengkoordinir dan menyiapkan kegiatan penjaminan mutu eksternal melalui akreditasi, baik di tingkat program studi maupun institusi.' },
+  { no: 3, judul: 'Koordinasi Civitas Akademika', deskripsi: 'Mengkoordinir dan mengarahkan semua bagian/civitas akademik UIN Raden Fatah untuk memenuhi seluruh aspek standar mutu nasional maupun internasional.' },
+  { no: 4, judul: 'Sistem Manajemen ISO', deskripsi: 'Mengkoordinir pelaksanaan penjaminan mutu sistem manajemen (ISO 9001:2015/IWA2) di seluruh bagian UIN Raden Fatah Palembang.' },
 ];
 
 const accreditationLevels = [
@@ -40,6 +25,20 @@ const accreditationLevels = [
 
 export default function VisiMisiPage() {
   useEffect(() => { document.title = 'Visi dan Misi :: LPM UIN Raden Fatah Palembang'; }, []);
+
+  const [visiMisi, setVisiMisi] = useState<{ visi: string; items: MissionItem[] } | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await getPublicVisiMisi();
+      if (data) setVisiMisi(data);
+    };
+    fetchData();
+  }, []);
+
+  const missions = visiMisi?.items?.length ? visiMisi.items : defaultMissions;
+  const visi = visiMisi?.visi || 'Menjadi Lembaga Penjaminan Mutu yang Unggul dan Bereputasi Internasional';
+
   return (
     <div>
       {/* Page Header */}
@@ -69,7 +68,7 @@ export default function VisiMisiPage() {
             <h2 className="text-2xl md:text-3xl font-bold">Visi</h2>
           </div>
           <p className="text-xl md:text-2xl font-bold text-white leading-relaxed">
-            Menjadi Lembaga Penjaminan Mutu yang Unggul dan Bereputasi Internasional
+            {visi}
           </p>
         </div>
 
@@ -79,16 +78,16 @@ export default function VisiMisiPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {missions.map((mission) => (
               <div
-                key={mission.number}
+                key={mission.no}
                 className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center text-slate-900 font-bold text-xl">
-                    {mission.number}
+                    {mission.no}
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-800 mb-2 text-lg">{mission.title}</h3>
-                    <p className="text-slate-600 leading-relaxed">{mission.description}</p>
+                    <h3 className="font-bold text-slate-800 mb-2 text-lg">{mission.judul}</h3>
+                    <p className="text-slate-600 leading-relaxed">{mission.deskripsi}</p>
                   </div>
                 </div>
               </div>
