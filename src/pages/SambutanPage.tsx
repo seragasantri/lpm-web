@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Quote, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Layout from '../components/Layout';
 import { getPublicSambutan } from '../lib/api';
 
 export default function SambutanPage() {

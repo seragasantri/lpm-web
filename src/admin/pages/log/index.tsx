@@ -4,17 +4,6 @@ import { getLogs, clearLogs, type ActivityLog } from '../../../lib/api';
 import DataTable from '../../components/DataTable';
 import { Activity, Trash2 } from 'lucide-react';
 
-const ACTION_STYLES: Record<string, string> = {
-  LOGIN: 'bg-green-100 text-green-700',
-  LOGOUT: 'bg-slate-100 text-slate-600',
-  CREATE: 'bg-blue-100 text-blue-700',
-  UPDATE: 'bg-yellow-100 text-yellow-700',
-  DELETE: 'bg-red-100 text-red-700',
-  PUBLISH: 'bg-green-100 text-green-700',
-  DRAFT: 'bg-orange-100 text-orange-700',
-  ARCHIVED: 'bg-slate-100 text-slate-500',
-};
-
 export default function LogIndex() {
   useEffect(() => { document.title = 'Log Aktivitas :: LPM Admin'; }, []);
   const { hasPermission } = useAuth();

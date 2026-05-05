@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Globe, Plus } from 'lucide-react';
+import { Globe } from 'lucide-react';
 import DataTable from '../../../components/DataTable';
 import { getSitus, deleteSitus } from '../../../../lib/mockData';
 import { useAuth } from '../../../../context/AuthContext';

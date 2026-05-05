@@ -92,7 +92,7 @@ export default function SpmeIsoForm() {
         judul: form.judul.trim(),
         deskripsi: form.deskripsi.trim(),
         status: form.status as IsoMilestone['status'],
-        dokumen: form.dokumen ? [form.dokumen] : [],
+        dokumen: form.dokumen || undefined,
         linkEksternal: form.linkEksternal.trim() || undefined,
         urutan: form.urutan,
       };

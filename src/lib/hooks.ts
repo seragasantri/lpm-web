@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as api from './api';
-import type { ApiResponse } from './api';
 
 // ============ Auth ============
 export function useLogin() {

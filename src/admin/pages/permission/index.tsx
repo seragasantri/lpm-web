@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { getPermissions, getRoles, type Permission, type RoleResponse } from '../../../lib/api';
 import DataTable, { type Column, type TableFilter } from '../../components/DataTable';
-import { Shield, Eye, FileText } from 'lucide-react';
+import { Shield, FileText } from 'lucide-react';
 
 // Parse permission name: modul_action (e.g., "berita_create" → modul: "Berita", action: "Buat")
 function parsePermissionName(name: string): { modul: string; action: string } {
@@ -163,7 +163,6 @@ export default function PermissionIndex() {
         filters={filters}
         loading={loading}
         emptyMessage="Belum ada data permission."
-        perPage={15}
       />
     </div>
   );

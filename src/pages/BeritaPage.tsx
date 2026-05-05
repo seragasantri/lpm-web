@@ -18,7 +18,7 @@ export default function BeritaPage() {
   const { kategori } = useParams<{ kategori?: string }>();
   const { tag } = useParams<{ tag?: string }>();
   const [berita, setBerita] = useState<BeritaResponse[]>([]);
-  const [kategoriList, setKategoriList] = useState<{ id: number; nama: string }[]>([]);
+  const [kategoriList, setKategoriList] = useState<{ id: string; nama: string }[]>([]);
   const [selectedKategori, setSelectedKategori] = useState<string | null>(kategori || null);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);

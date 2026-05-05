@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { MapPin, Phone, Mail, Clock } from 'lucide-react';
 import { contactInfo } from '../data/navigation';
 import { getPublicKontak } from '../lib/api';
-import Layout from '../components/Layout';
 
 export default function KontakPage() {
   useEffect(() => { document.title = 'Kontak :: LPM UIN Raden Fatah Palembang'; }, []);

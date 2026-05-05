@@ -4,7 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { getQuickAccessItems, deleteQuickAccessItem } from '../../../lib/api';
 import DataTable from '../../components/DataTable';
 import type { QuickAccessResponse } from '../../../lib/api';
-import { Link2, Plus, Loader, GripVertical, Eye, Edit, Trash2 } from 'lucide-react';
+import { Link2, GripVertical } from 'lucide-react';
 
 export default function QuickAccessIndex() {
   useEffect(() => { document.title = 'Menu Cepat :: LPM Admin'; }, []);

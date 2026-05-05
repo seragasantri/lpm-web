@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Tag as TagIcon, Plus, Loader, Edit, Trash2 } from 'lucide-react';
+import { Tag as TagIcon, Plus, Loader } from 'lucide-react';
 import DataTable from '../../components/DataTable';
 import { useAuth } from '../../../context/AuthContext';
 import { getTags, createTag, updateTag, deleteTag } from '../../../lib/api';
@@ -13,7 +12,6 @@ interface TagData {
 
 export default function TagIndex() {
   useEffect(() => { document.title = 'Manajemen Tag :: LPM Admin'; }, []);
-  const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const [data, setData] = useState<TagData[]>([]);
   const [loading, setLoading] = useState(true);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BookOpen, Plus, Trash2, Edit2, X, Save, RotateCcw } from 'lucide-react';
+import { BookOpen, Plus, Trash2, Edit2, Save, RotateCcw } from 'lucide-react';
 import Textarea from '../../components/Textarea';
 import FileUpload from '../../components/FileUpload';
 import { getGpmp, updateGpmp } from '../../../lib/mockData';

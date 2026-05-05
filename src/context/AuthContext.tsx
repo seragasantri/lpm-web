@@ -2,15 +2,7 @@ import { createContext, useContext, useCallback, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import * as api from '../lib/api';
-
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  is_active: boolean;
-  roles: string[];
-  permissions: string[];
-}
+import type { User } from '../lib/types';
 
 interface AuthContextType {
   user: User | null;
@@ -18,7 +10,6 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   hasPermission: (permission: string) => boolean;
-  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,15 +20,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem('lpm_user');
     return saved ? JSON.parse(saved) : null;
   });
-  const [isLoading, setIsLoading] = useState(false);
 
   const login = useCallback(async (username: string, password: string) => {
     const response = await api.login(username, password);
     // Simpan normalized user
-    const normalizedUser = {
-      ...response.user,
-      isActive: response.user.is_active,
+    const normalizedUser: User = {
+      id: String(response.user.id),
+      username: response.user.username,
+      email: response.user.email,
+      isActive: response.user.is_active ?? true,
+      roleIds: (response.user.roles || []) as string[],
       permissions: (response.user.permissions || []).map((p: string) => p.replace(/_/g, '.')),
+      createdAt: (response.user as Record<string, unknown>).created_at as string || new Date().toISOString(),
     };
     localStorage.setItem('lpm_user', JSON.stringify(normalizedUser));
     setUser(normalizedUser);
@@ -54,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return false;
 
     // Super Admin has access to everything
-    if (user.roles?.includes('Super Admin') || user.roles?.includes('super_admin') || user.roles?.includes('admin')) {
+    if (user.roleIds?.some(r => ['Super Admin', 'super_admin', 'admin', 'r1'].includes(r))) {
       return true;
     }
 
@@ -77,7 +71,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       isAuthenticated: !!user,
       hasPermission,
-      isLoading,
     }}>
       {children}
     </AuthContext.Provider>

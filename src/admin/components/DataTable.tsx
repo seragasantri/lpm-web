@@ -8,7 +8,7 @@ interface Column<T> {
   render?: (value: unknown, item: T) => React.ReactNode;
 }
 
-export { Column };
+export type { Column };
 
 export interface TableFilter {
   key: string;

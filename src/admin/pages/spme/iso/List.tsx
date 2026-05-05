@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileCheck, Plus, Download, ExternalLink } from 'lucide-react';
+import { FileCheck, Download, ExternalLink } from 'lucide-react';
 import DataTable from '../../../components/DataTable';
 import type { IsoMilestone } from '../../../../lib/types';
 import { getIso, deleteIso } from '../../../../lib/mockData';

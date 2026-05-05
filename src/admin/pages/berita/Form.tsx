@@ -17,7 +17,7 @@ export default function BeritaForm({ editId }: Props) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(!!id);
   const [saving, setSaving] = useState(false);
-  const [kategoriList, setKategoriList] = useState<{ id: number; nama: string }[]>([]);
+  const [kategoriList, setKategoriList] = useState<{ id: string; nama: string }[]>([]);
   const [tagList, setTagList] = useState<TagResponse[]>([]);
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
   const [tagSearch, setTagSearch] = useState('');
@@ -35,7 +35,7 @@ export default function BeritaForm({ editId }: Props) {
   const [form, setForm] = useState<CreateBeritaData>({
     judul: '',
     slug: '',
-    kategoris_id: 0,
+    kategoris_id: '',
     tanggal: new Date().toISOString().split('T')[0],
     gambar: '',
     excerpt: '',
@@ -63,7 +63,7 @@ export default function BeritaForm({ editId }: Props) {
         setForm({
           judul: b.judul,
           slug: b.slug,
-          kategoris_id: b.kategoris_id,
+          kategoris_id: String(b.kategoris_id),
           tanggal: b.tanggal,
           gambar: b.gambar ? `${b.gambar}` : '',
           excerpt: b.excerpt || '',
@@ -167,7 +167,7 @@ export default function BeritaForm({ editId }: Props) {
             <select
               name="kategoris_id"
               value={form.kategoris_id || ''}
-              onChange={(e) => setForm(prev => ({ ...prev, kategoris_id: parseInt(e.target.value) || 0 }))}
+              onChange={(e) => setForm(prev => ({ ...prev, kategoris_id: e.target.value || '' }))}
               className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white"
               required
             >

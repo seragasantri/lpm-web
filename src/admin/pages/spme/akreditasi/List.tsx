@@ -1,12 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Award, Plus, Download, ExternalLink, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Award, Download, ExternalLink } from 'lucide-react';
 import DataTable from '../../../components/DataTable';
 import type { Akreditasi } from '../../../../lib/types';
 import { getAkreditasi, deleteAkreditasi } from '../../../../lib/mockData';
 import { useAuth } from '../../../../context/AuthContext';
 
-const TIPE_OPTIONS = ['AMI Auditee', 'AMI Auditor', 'Evaluasi Diri', 'Program Studi'];
 
 export default function SpmeAkreditasiList() {
   useEffect(() => { document.title = 'Instrumen Akreditasi :: LPM Admin'; }, []);
