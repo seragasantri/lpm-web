@@ -34,6 +34,7 @@ export default function RichEditor({
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
+        gapcursor: false,
       }),
       Underline,
       Image.configure({

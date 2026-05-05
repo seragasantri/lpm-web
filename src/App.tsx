@@ -109,8 +109,9 @@ export default function App() {
           <Route path="/sertifikat" element={<Layout><SertifikatPage /></Layout>} />
           <Route path="/peraturan" element={<Layout><PeraturanPage /></Layout>} />
           <Route path="/berita" element={<Layout><BeritaPage /></Layout>} />
+          <Route path="/berita/tag/:tag" element={<Layout><BeritaPage /></Layout>} />
+          <Route path="/berita/kategori/:kategori" element={<Layout><BeritaPage /></Layout>} />
           <Route path="/berita/:slug" element={<Layout><BeritaDetailPage /></Layout>} />
-          <Route path="/berita/:kategori" element={<Layout><BeritaPage /></Layout>} />
 
           {/* ========== ADMIN PANEL ========== */}
           <Route path="/login" element={<PublicAdminRoute><AdminLogin /></PublicAdminRoute>} />

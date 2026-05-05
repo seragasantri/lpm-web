@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Rss, ExternalLink } from 'lucide-react';
+import { FileText, Rss, ExternalLink, Eye } from 'lucide-react';
 import DataTable from '../../components/DataTable';
 import { getBeritas, deleteBerita, type BeritaResponse } from '../../../lib/api';
 
@@ -18,6 +18,11 @@ const kategoriColors: Record<string, string> = {
   ISO: 'bg-sky-100 text-sky-700',
 };
 
+// Helper function to get view count from localStorage
+function getViews(id: number): number {
+  return parseInt(localStorage.getItem(`lpm_berita_views_${id}`) || '0');
+}
+
 export default function BeritaList() {
   useEffect(() => { document.title = 'Manajemen Berita :: LPM Admin'; }, []);
   const [data, setData] = useState<BeritaResponse[]>([]);
@@ -25,15 +30,18 @@ export default function BeritaList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  //argument of type BeritaListResponse is not assignable to parameter of type SetStateAction<BeritaResponse[]> 
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const result = await getBeritas({ per_page: 100 });
-      setData(result.data || []);
-      setTotal(result.total || 0);
+      // Handle both array response and object with data property
+      const items = Array.isArray(result) ? result : (result?.data || []);
+      setData(items);
+      setTotal(Array.isArray(result) ? result.length : (result?.total || 0));
     } catch (err) {
+      console.error('Error fetching berita:', err);
       setError(err instanceof Error ? err.message : 'Gagal memuat data');
     } finally {
       setLoading(false);
@@ -88,6 +96,15 @@ export default function BeritaList() {
       key: 'author', label: 'Author',
       render: (_: unknown, item: BeritaResponse) => (
         <span className="text-slate-500 text-sm">{item.author?.username || '-'}</span>
+      ),
+    },
+    {
+      key: 'views', label: 'Dilihat',
+      render: (_: unknown, item: BeritaResponse) => (
+        <span className="flex items-center gap-1.5 text-sm text-slate-600 font-medium">
+          <Eye size={14} className="text-slate-400" />
+          {getViews(item.id)}x
+        </span>
       ),
     },
     {

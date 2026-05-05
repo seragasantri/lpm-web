@@ -437,6 +437,15 @@ export async function toggleUserActive(id: number): Promise<UserResponse> {
   return json.data;
 }
 
+// Tags for Berita
+export interface TagResponse {
+  id: number;
+  nama: string;
+  slug: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Berita
 export interface BeritaResponse {
   id: number;
@@ -456,6 +465,7 @@ export interface BeritaResponse {
   konten: string;
   status: "draft" | "published" | "archived";
   meta_title: string | null;
+  meta_description?: string | null;
   author_id: number;
   author: {
     id: number;
@@ -468,6 +478,7 @@ export interface BeritaResponse {
     created_at: string;
     updated_at: string;
   };
+  tags?: TagResponse[];
   created_at: string;
   updated_at: string;
 }
@@ -602,6 +613,31 @@ export async function getPublicBeritas(params?: GetBeritasParams): Promise<{
   return json.data;
 }
 
+export async function getPublicBeritasByTag(tagSlug: string, params?: { per_page?: number }): Promise<{
+  data: BeritaResponse[];
+  current_page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+}> {
+  const searchParams = new URLSearchParams();
+  if (params?.per_page) searchParams.set("per_page", String(params.per_page));
+
+  const query = searchParams.toString();
+  const response = await fetch(
+    `${API_BASE}/public/beritas/by-tag/${tagSlug}${query ? `?${query}` : ""}`,
+  );
+  const json: ApiResponse<{
+    data: BeritaResponse[];
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  }> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
 export interface UploadResponse {
   url: string;
   original_name: string;
@@ -624,6 +660,31 @@ export async function uploadImage(file: File): Promise<UploadResponse> {
   }
 
   const response = await fetch(`${API_BASE}/upload/image`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  const json: ApiResponse<UploadResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function uploadFile(file: File): Promise<UploadResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const token = getToken();
+  const lang = localStorage.getItem("language") || "id";
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "X-Language": lang,
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE}/upload/file`, {
     method: "POST",
     headers,
     body: formData,
@@ -1568,6 +1629,146 @@ export async function getPublicInfoTerkini(): Promise<string[]> {
     const json: ApiResponse<InfoTerkininResponse[]> = await response.json();
     if (!json.success) return [];
     return (json.data || []).map(item => item.teks);
+  } catch {
+    return [];
+  }
+}
+
+// ============ Sertifikat ============
+export interface SertifikatResponse {
+  id: number;
+  prodis_id: number;
+  jenjang: string;
+  mulai_aktif: string;
+  akhir_aktif: string;
+  nilai: string | null;
+  skor: string;
+  file_sk: string | null;
+  created_at: string;
+  updated_at: string;
+  prodi?: {
+    id: number;
+    kode_prodi: string;
+    nama_prodi: string;
+    fakultases_id: number;
+    fakulta?: {
+      id: number;
+      kode_fakulta: string;
+      nama_fakulta: string;
+    };
+  };
+}
+
+export interface CreateSertifikatData {
+  prodis_id: number;
+  jenjang: string;
+  mulai_aktif: string;
+  akhir_aktif: string;
+  nilai?: string;
+  skor: string;
+  file_sk?: string;
+}
+
+export async function getSertifikats(params?: { per_page?: number; page?: number; prodis_id?: number }): Promise<{
+  data: SertifikatResponse[];
+  current_page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+}> {
+  const searchParams = new URLSearchParams();
+  if (params?.per_page) searchParams.set("per_page", String(params.per_page));
+  if (params?.page) searchParams.set("page", String(params.page));
+  if (params?.prodis_id) searchParams.set("prodis_id", String(params.prodis_id));
+
+  const query = searchParams.toString();
+  const response = await apiFetch(`/sertifikats${query ? `?${query}` : ""}`);
+  const json: ApiResponse<{
+    data: SertifikatResponse[];
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  }> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function getSertifikat(id: number): Promise<SertifikatResponse> {
+  const response = await apiFetch(`/sertifikats/${id}`);
+  const json: ApiResponse<SertifikatResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function createSertifikat(data: CreateSertifikatData): Promise<SertifikatResponse> {
+  const response = await apiFetch("/sertifikats", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<SertifikatResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function updateSertifikat(id: number, data: Partial<CreateSertifikatData>): Promise<SertifikatResponse> {
+  const response = await apiFetch(`/sertifikats/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  const json: ApiResponse<SertifikatResponse> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data;
+}
+
+export async function deleteSertifikat(id: number): Promise<void> {
+  const response = await apiFetch(`/sertifikats/${id}`, { method: "DELETE" });
+  const json: ApiResponse<null> = response.json();
+  if (!json.success) throw new Error((await json).message);
+}
+
+// Public Sertifikats (no auth)
+export async function getPublicSertifikats(): Promise<SertifikatResponse[]> {
+  try {
+    const response = await fetch(`${API_BASE}/public/sertifikats`);
+    if (!response.ok) return [];
+    const json: ApiResponse<SertifikatResponse[]> = await response.json();
+    if (!json.success) return [];
+    return json.data || [];
+  } catch {
+    return [];
+  }
+}
+
+// ============ Program Studi ============
+export interface ProdiResponse {
+  id: number;
+  kode_prodi: string;
+  nama_prodi: string;
+  fakultases_id: number;
+  created_at: string;
+  updated_at: string;
+  fakulta?: {
+    id: number;
+    kode_fakulta: string;
+    nama_fakulta: string;
+  };
+}
+
+export async function getProdis(): Promise<ProdiResponse[]> {
+  const response = await apiFetch("/prodis");
+  const json: ApiResponse<ProdiResponse[]> = await response.json();
+  if (!json.success) throw new Error(json.message);
+  return json.data || [];
+}
+
+export async function getPublicProdis(): Promise<ProdiResponse[]> {
+  try {
+    const response = await fetch(`${API_BASE}/public/prodis`);
+    if (!response.ok) return [];
+    const json: ApiResponse<ProdiResponse[]> = await response.json();
+    if (!json.success) return [];
+    return json.data || [];
   } catch {
     return [];
   }
