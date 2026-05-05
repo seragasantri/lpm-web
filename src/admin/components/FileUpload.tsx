@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback } from 'react';
 import { Upload, File, Image, X, Loader } from 'lucide-react';
-import { uploadImage } from '../../lib/api';
+import { uploadImage, uploadFile } from '../../lib/api';
 
 export interface FileUploadProps {
   value?: string;
@@ -39,7 +39,15 @@ export default function FileUpload({
     setPreviewError(false);
 
     try {
-      const result = await uploadImage(file);
+      let result;
+      // Use appropriate upload function based on accept prop (context)
+      if (accept && accept !== '*' && !accept.includes('image')) {
+        // Non-image context (PDF, docs, etc) - use uploadFile
+        result = await uploadFile(file);
+      } else {
+        // Image context or default - use uploadImage
+        result = await uploadImage(file);
+      }
       const url = result.url;
       onChange?.(url);
     } catch (err) {
@@ -48,7 +56,7 @@ export default function FileUpload({
     } finally {
       setUploading(false);
     }
-  }, [onChange]);
+  }, [onChange, accept]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();

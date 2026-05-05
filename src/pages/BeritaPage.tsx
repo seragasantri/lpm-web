@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getPublicBeritas, type BeritaResponse } from '../lib/api';
 import { getKategoriPublic } from '../lib/hooks-data';
 import { Calendar, Search, Rss, ArrowRight, Eye } from 'lucide-react';
@@ -14,7 +14,9 @@ const kategoriColors: Record<string, string> = {
 };
 
 export default function BeritaPage() {
+  const navigate = useNavigate();
   const { kategori } = useParams<{ kategori?: string }>();
+  const { tag } = useParams<{ tag?: string }>();
   const [berita, setBerita] = useState<BeritaResponse[]>([]);
   const [kategoriList, setKategoriList] = useState<{ id: number; nama: string }[]>([]);
   const [selectedKategori, setSelectedKategori] = useState<string | null>(kategori || null);
@@ -22,8 +24,13 @@ export default function BeritaPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = selectedKategori ? `Berita ${selectedKategori} :: LPM UIN Raden Fatah` : 'Berita :: LPM UIN Raden Fatah';
-  }, [selectedKategori]);
+    const title = tag
+      ? `Tag: ${tag} :: LPM UIN Raden Fatah`
+      : selectedKategori
+      ? `Berita ${selectedKategori} :: LPM UIN Raden Fatah`
+      : 'Berita :: LPM UIN Raden Fatah';
+    document.title = title;
+  }, [selectedKategori, tag]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -47,10 +54,11 @@ export default function BeritaPage() {
 
   const filtered = berita.filter(b => {
     const matchKategori = !selectedKategori || b.kategori?.nama === selectedKategori;
+    const matchTag = !tag || (b.tags && b.tags.some(t => t.slug === tag));
     const matchSearch = !search ||
       b.judul.toLowerCase().includes(search.toLowerCase()) ||
       (b.excerpt?.toLowerCase() || '').includes(search.toLowerCase());
-    return matchKategori && matchSearch;
+    return matchKategori && matchTag && matchSearch;
   });
 
   const getViews = (id: number) => {
@@ -58,7 +66,8 @@ export default function BeritaPage() {
   };
 
   const handleKategoriClick = (nama: string) => {
-    setSelectedKategori(nama);
+    // Navigate to kategori route
+    navigate(`/berita/kategori/${encodeURIComponent(nama)}`);
   };
 
   const getGambarUrl = (gambar: string | null) => {
@@ -84,6 +93,11 @@ export default function BeritaPage() {
             <span className="bg-white/20 rounded-lg px-3 py-1.5 text-sm font-bold">
               {filtered.length} Berita
             </span>
+            {tag && (
+              <span className="bg-purple-500 text-white rounded-lg px-3 py-1.5 text-sm font-bold flex items-center gap-1">
+                Tag: {tag}
+              </span>
+            )}
             {selectedKategori && (
               <button
                 onClick={() => setSelectedKategori(null)}
@@ -99,8 +113,8 @@ export default function BeritaPage() {
       {/* Filter Kategori */}
       <div className="flex flex-wrap gap-2 mb-6">
         <button
-          onClick={() => setSelectedKategori(null)}
-          className={`px-4 py-2 rounded-full text-sm font-bold transition-all shadow-sm ${!selectedKategori
+          onClick={() => navigate('/berita')}
+          className={`px-4 py-2 rounded-full text-sm font-bold transition-all shadow-sm ${!tag && !selectedKategori
             ? 'bg-sky-600 text-white shadow-lg'
             : 'bg-white text-slate-600 hover:bg-sky-50 border border-slate-200'
             }`}
@@ -141,7 +155,17 @@ export default function BeritaPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-slate-100">
           <Rss size={48} className="mx-auto text-slate-300 mb-4" />
-          <p className="text-slate-500 font-medium">Belum ada berita dalam kategori ini.</p>
+          <p className="text-slate-500 font-medium">
+            {tag ? `Tidak ada berita dengan tag "${tag}".` : 'Belum ada berita dalam kategori ini.'}
+          </p>
+          {tag && (
+            <button
+              onClick={() => navigate('/berita')}
+              className="mt-4 px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-semibold hover:bg-sky-700 transition-colors"
+            >
+              Lihat Semua Berita
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

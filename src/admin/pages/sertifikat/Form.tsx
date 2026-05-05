@@ -1,17 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getSertifikat, createSertifikat, updateSertifikat, getProdi } from '../../../lib/mockData';
-import type { Sertifikat, Prodi } from '../../../lib/types';
+import { getProdis, getSertifikats, createSertifikat, updateSertifikat, type ProdiResponse } from '../../../lib/api';
 import { ArrowLeft, Save, Loader } from 'lucide-react';
 import SelectInput from '../../components/SelectInput';
 import FileUpload from '../../components/FileUpload';
 
-const JENJANG_OPTS = ['S1', 'S2', 'S3'] as const;
 const SKOR_OPTS = ['Unggul', 'A', 'B', 'Baik Sekali'] as const;
 
 interface FormState {
   prodiId: string;
-  jenjang: Sertifikat['jenjang'];
+  jenjang: string;
   mulaiAktif: string;
   akhirAktif: string;
   nilai: string;
@@ -24,9 +22,7 @@ export default function SertifikatForm({ editId }: { editId?: string }) {
   const navigate = useNavigate();
   const paramId = editId || id;
 
-  const mountCountRef = useRef(0);
-  const [tsKey] = useState(() => ++mountCountRef.current);
-  const [prodiList, setProdiList] = useState<Prodi[]>([]);
+  const [prodiList, setProdiList] = useState<ProdiResponse[]>([]);
   const [form, setForm] = useState<FormState>({
     prodiId: '',
     jenjang: 'S1',
@@ -36,37 +32,45 @@ export default function SertifikatForm({ editId }: { editId?: string }) {
     skor: 'A',
     fileSk: '',
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    getProdi().then(list => {
-      setProdiList(list);
-      if (list.length > 0 && !form.prodiId) {
-        setForm(prev => ({ ...prev, prodiId: list[0].id }));
+    const loadData = async () => {
+      try {
+        const prodis = await getProdis();
+        setProdiList(prodis);
+        if (prodis.length > 0 && !form.prodiId) {
+          setForm(prev => ({ ...prev, prodiId: String(prodis[0].id) }));
+        }
+      } catch (err) {
+        console.error('Error loading prodi:', err);
       }
-    });
-  }, []);
+    };
 
-  useEffect(() => {
-    if (!paramId) return;
-    setLoading(true);
-    Promise.all([getSertifikat(), getProdi()]).then(([list, prodis]) => {
-      setProdiList(prodis);
-      const item = list.find(x => x.id === paramId);
-      if (item) {
-        setForm({
-          prodiId: item.prodiId,
-          jenjang: item.jenjang,
-          mulaiAktif: item.mulaiAktif,
-          akhirAktif: item.akhirAktif,
-          nilai: item.nilai || '',
-          skor: item.skor,
-          fileSk: item.fileSk || '',
-        });
-      }
-      setLoading(false);
-    });
+    if (paramId) {
+      Promise.all([
+        getSertifikats({ per_page: 500 }),
+        loadData(),
+      ]).then(([sertifikatsData]) => {
+        const allSertifikats = sertifikatsData.data || [];
+        const item = allSertifikats.find(x => x.id === Number(paramId));
+        if (item) {
+          setForm({
+            prodiId: String(item.prodis_id),
+            jenjang: item.jenjang,
+            mulaiAktif: item.mulai_aktif ? item.mulai_aktif.split('T')[0] : '',
+            akhirAktif: item.akhir_aktif ? item.akhir_aktif.split('T')[0] : '',
+            nilai: item.nilai || '',
+            skor: item.skor,
+            fileSk: item.file_sk || '',
+          });
+        }
+        setLoading(false);
+      }).catch(() => setLoading(false));
+    } else {
+      loadData().then(() => setLoading(false));
+    }
   }, [paramId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,21 +78,22 @@ export default function SertifikatForm({ editId }: { editId?: string }) {
     setSaving(true);
     try {
       const payload = {
-        prodiId: form.prodiId,
+        prodis_id: parseInt(form.prodiId),
         jenjang: form.jenjang,
-        mulaiAktif: form.mulaiAktif,
-        akhirAktif: form.akhirAktif,
-        nilai: form.nilai.trim(),
+        mulai_aktif: form.mulaiAktif,
+        akhir_aktif: form.akhirAktif,
+        nilai: form.nilai.trim() || undefined,
         skor: form.skor,
-        fileSk: form.fileSk || undefined,
+        file_sk: form.fileSk || undefined,
       };
       if (paramId) {
-        await updateSertifikat(paramId, payload);
+        await updateSertifikat(Number(paramId), payload);
       } else {
         await createSertifikat(payload);
       }
       navigate('/admin/sertifikat');
-    } finally {
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menyimpan');
       setSaving(false);
     }
   };
@@ -114,22 +119,11 @@ export default function SertifikatForm({ editId }: { editId?: string }) {
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">Program Studi</label>
               <SelectInput
-                key={`prodi-${tsKey}`}
                 name="prodiId"
                 value={form.prodiId}
                 onChange={(val) => setForm(prev => ({ ...prev, prodiId: val }))}
-                options={prodiList.map(p => ({ value: p.id, label: `${p.nama_prodi} (${p.kode_prodi})` }))}
+                options={prodiList.map(p => ({ value: String(p.id), label: `${p.nama_prodi} (${p.kode_prodi})` }))}
                 placeholder="Pilih Program Studi"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Jenjang</label>
-              <SelectInput
-                name="jenjang"
-                value={form.jenjang}
-                onChange={(val) => setForm(prev => ({ ...prev, jenjang: val as Sertifikat['jenjang'] }))}
-                options={JENJANG_OPTS.map(j => ({ value: j, label: j }))}
-                placeholder="Pilih Jenjang"
               />
             </div>
             <div>

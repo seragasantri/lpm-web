@@ -2,13 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { Award, Download, QrCode, CheckCircle } from 'lucide-react';
-import { getSertifikat, getProdi, getFaker } from '../lib/mockData';
-import type { Sertifikat, Prodi, Faker } from '../lib/types';
-
-interface GroupedData {
-  faker: Faker;
-  rows: { prodi: Prodi; sertifikat: Sertifikat }[];
-}
+import { getPublicSertifikats, type SertifikatResponse } from '../lib/api';
 
 const STAT_CONFIGS = [
   { label: 'Akreditasi Unggul', color: 'bg-emerald-500', textColor: 'text-emerald-700', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
@@ -24,47 +18,92 @@ const HASIL_STYLES: Record<string, string> = {
   'Baik Sekali': 'bg-purple-100 text-purple-700',
 };
 
+interface GroupedData {
+  fakultaId: number;
+  fakultaNama: string;
+  rows: { prodiNama: string; prodiKode: string; jenjang: string; sertifikat: SertifikatResponse }[];
+}
+
 export default function SertifikatPage() {
   useEffect(() => { document.title = 'Sertifikat Akreditasi :: LPM UIN Raden Fatah Palembang'; }, []);
 
-  const [sertifikats, setSertifikats] = useState<Sertifikat[]>([]);
-  const [prodis, setProdis] = useState<Prodi[]>([]);
-  const [fakers, setFakers] = useState<Faker[]>([]);
+  const [sertifikats, setSertifikats] = useState<SertifikatResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getSertifikat(), getProdi(), getFaker()]).then(([s, p, f]) => {
-      setSertifikats(s);
-      setProdis(p);
-      setFakers(f);
-      setLoading(false);
-    });
+    const loadData = async () => {
+      try {
+        const data = await getPublicSertifikats();
+        setSertifikats(data);
+      } catch (err) {
+        console.error('Error loading sertifikat:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
   }, []);
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
-  const groupedData: GroupedData[] = fakers
-    .map(faker => ({
-      faker,
-      rows: prodis
-        .filter(p => p.faker_id === faker.id)
-        .flatMap(p =>
-          sertifikats
-            .filter(s => s.prodiId === p.id)
-            .map(sertifikat => ({ prodi: p, sertifikat }))
-        ),
-    }))
-    .filter(g => g.rows.length > 0);
+  // Group by fakulta and get only latest sertifikat per prodi
+  const groupedData: GroupedData[] = Object.values(
+    sertifikats.reduce<Record<number, GroupedData>>((acc, sertifikat) => {
+      const prodi = sertifikat.prodi;
+      if (!prodi) return acc;
+
+      const fakultaId = prodi.fakultases_id;
+      const fakultaNama = prodi.fakulta?.nama_fakulta || 'Lainnya';
+      const prodiKey = `${prodi.id}`;
+
+      if (!acc[fakultaId]) {
+        acc[fakultaId] = {
+          fakultaId,
+          fakultaNama,
+          rows: [],
+        };
+      }
+
+      // Find existing row for this prodi
+      const existingIndex = acc[fakultaId].rows.findIndex(r => r.prodiKode === prodi.kode_prodi);
+
+      if (existingIndex === -1) {
+        // Add new row
+        acc[fakultaId].rows.push({
+          prodiNama: prodi.nama_prodi,
+          prodiKode: prodi.kode_prodi,
+          jenjang: sertifikat.jenjang,
+          sertifikat,
+        });
+      } else {
+        // Compare dates and keep the newer one
+        const existing = acc[fakultaId].rows[existingIndex];
+        const existingDate = new Date(existing.sertifikat.created_at).getTime();
+        const newDate = new Date(sertifikat.created_at).getTime();
+        if (newDate > existingDate) {
+          acc[fakultaId].rows[existingIndex] = {
+            prodiNama: prodi.nama_prodi,
+            prodiKode: prodi.kode_prodi,
+            jenjang: sertifikat.jenjang,
+            sertifikat,
+          };
+        }
+      }
+
+      return acc;
+    }, {})
+  ).filter(g => g.rows.length > 0).sort((a, b) => a.fakultaNama.localeCompare(b.fakultaNama));
 
   const stats = STAT_CONFIGS.map(cfg => ({
     ...cfg,
     count: sertifikats.filter(s => s.skor === cfg.label).length,
   }));
 
-  const totalProdi = sertifikats.length;
+  const totalSertifikat = sertifikats.length;
 
   return (
     <div>
@@ -92,7 +131,7 @@ export default function SertifikatPage() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-xl font-bold text-slate-800">Statistik Akreditasi</h2>
-              <p className="text-slate-500 text-sm mt-1">Total {totalProdi} sertifikat</p>
+              <p className="text-slate-500 text-sm mt-1">Total {totalSertifikat} sertifikat</p>
             </div>
             <div className="flex items-center gap-2 text-emerald-600">
               <CheckCircle size={20} />
@@ -119,7 +158,7 @@ export default function SertifikatPage() {
           <div>
             <div className="flex items-end gap-2 h-24">
               {stats.map((stat, index) => {
-                const width = totalProdi > 0 ? (stat.count / totalProdi) * 100 : 0;
+                const width = totalSertifikat > 0 ? (stat.count / totalSertifikat) * 100 : 0;
                 return (
                   <div key={index} className="flex-1 flex flex-col items-center gap-1">
                     <div
@@ -181,28 +220,28 @@ export default function SertifikatPage() {
                 </thead>
                 <tbody>
                   {groupedData.map(group => (
-                    <React.Fragment key={group.faker.id}>
+                    <React.Fragment key={group.fakultaId}>
                       {/* Group Header */}
                       <tr className="bg-sky-50 border-b border-sky-200">
                         <td colSpan={7} className="px-4 py-2.5">
-                          <span className="font-bold text-sky-800 text-sm">{group.faker.nama_faker}</span>
+                          <span className="font-bold text-sky-800 text-sm">{group.fakultaNama}</span>
                         </td>
                       </tr>
                       {/* Rows */}
                       {group.rows.map((row, sIdx) => (
                         <tr
-                          key={`${row.prodi.id}-${row.sertifikat.id}`}
+                          key={`${row.prodiKode}-${row.sertifikat.id}`}
                           className={`border-b border-slate-100 ${sIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-sky-50 transition-colors`}
                         >
                           <td className="px-4 py-3 text-slate-600">{sIdx + 1}</td>
-                          <td className="px-4 py-3 font-medium text-slate-800">{row.prodi.nama_prodi}</td>
+                          <td className="px-4 py-3 font-medium text-slate-800">{row.prodiNama}</td>
                           <td className="px-4 py-3">
                             <span className="bg-slate-100 text-slate-700 text-xs font-semibold px-2 py-0.5 rounded">
-                              {row.sertifikat.jenjang}
+                              {row.jenjang}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-slate-600 text-xs">
-                            {formatDate(row.sertifikat.mulaiAktif)} — {formatDate(row.sertifikat.akhirAktif)}
+                            {formatDate(row.sertifikat.mulai_aktif)} — {formatDate(row.sertifikat.akhir_aktif)}
                           </td>
                           <td className="px-4 py-3 text-center">
                             <span className="font-bold text-slate-800 text-sm">{row.sertifikat.nilai || '-'}</span>
@@ -213,9 +252,9 @@ export default function SertifikatPage() {
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            {row.sertifikat.fileSk ? (
+                            {row.sertifikat.file_sk ? (
                               <a
-                                href={row.sertifikat.fileSk}
+                                href={row.sertifikat.file_sk}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-sky-600 hover:text-sky-700 text-xs font-medium transition-colors"

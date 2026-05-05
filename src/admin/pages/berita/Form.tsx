@@ -72,7 +72,7 @@ export default function BeritaForm({ editId }: Props) {
           meta_title: b.meta_title || '',
         });
         // Load tags for this berita if available
-        if ((b as any).tags) {
+        if ((b as any).tags && Array.isArray((b as any).tags)) {
           setSelectedTags((b as any).tags.map((t: TagResponse) => t.id));
         }
         setLoading(false);
