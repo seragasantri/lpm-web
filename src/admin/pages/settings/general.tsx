@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import { useQueryClient } from '@tanstack/react-query';
 import { getSettings, updateSettingImage, uploadImage } from '../../../lib/api';
 import { Settings, Upload, Image, Check, Loader, X, AlertCircle } from 'lucide-react';
 
@@ -20,11 +19,9 @@ interface ImageUploadState {
 export default function GeneralSettings() {
   useEffect(() => { document.title = 'Pengaturan :: LPM Admin'; }, []);
   const { hasPermission } = useAuth();
-  const queryClient = useQueryClient();
 
-  const [settings, setSettings] = useState<Record<string, string>>({});
+  const [_settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [dragActive, setDragActive] = useState<{ logo: boolean; favicon: boolean }>({ logo: false, favicon: false });
 
@@ -141,19 +138,6 @@ export default function GeneralSettings() {
       delete newSettings[type === 'logo' ? 'logo_url' : 'favicon_url'];
       return newSettings;
     });
-  };
-
-  const handleSaveAll = async () => {
-    setSaving(true);
-    try {
-      // Both images are already saved individually via handleFileUpload
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } catch {
-      // ignore
-    } finally {
-      setSaving(false);
-    }
   };
 
   if (!hasPermission('user.read')) return (

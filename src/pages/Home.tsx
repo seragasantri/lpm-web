@@ -6,7 +6,7 @@ import {
   ShieldCheck, Play, Quote, Building,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getPublicBeritas, getPublicSambutan, getPublicDownloads, getPublicPoll, getPublicQuickAccessItems, getPublicPartners, getPublicInfoTerkini, type BeritaResponse, type DownloadResponse } from '../lib/api';
+import { getPublicBeritas, getPublicSambutan, getPublicDownloads, getPublicPoll, getPublicPartners, getPublicInfoTerkini, type BeritaResponse, type DownloadResponse } from '../lib/api';
 
 // Prayer Times API (Aladhan - supports current date)
 interface PrayerTimesResponse {

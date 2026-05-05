@@ -58,7 +58,6 @@ export default function SertifikatPage() {
 
       const fakultaId = prodi.fakultases_id;
       const fakultaNama = prodi.fakulta?.nama_fakulta || 'Lainnya';
-      const prodiKey = `${prodi.id}`;
 
       if (!acc[fakultaId]) {
         acc[fakultaId] = {

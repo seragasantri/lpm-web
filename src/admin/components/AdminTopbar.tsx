@@ -88,9 +88,9 @@ export default function AdminTopbar({ onMenuClick }: AdminTopbarProps) {
             {/* User info */}
             <div className="px-4 py-3 border-b border-slate-100">
               <p className="text-sm font-semibold text-slate-800">{user?.username ?? '-'}</p>
-              {user?.roles?.[0] && (
+              {user?.roleIds?.[0] && (
                 <span className="inline-block mt-1.5 px-2 py-0.5 text-xs font-medium bg-sky-100 text-sky-700 rounded-full">
-                  {user.roles[0]}
+                  {user.roleIds[0]}
                 </span>
               )}
             </div>

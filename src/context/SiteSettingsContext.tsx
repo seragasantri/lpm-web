@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getPublicSettings } from '../lib/api';
 
@@ -15,8 +15,6 @@ const SiteSettingsContext = createContext<SiteSettingsContextType>({
 });
 
 export function SiteSettingsProvider({ children }: { children: ReactNode }) {
-  const queryClient = useQueryClient();
-
   const { data: settings, isLoading, refetch } = useQuery({
     queryKey: ['site-settings'],
     queryFn: getPublicSettings,

@@ -4,7 +4,7 @@ import type { ApiResponse } from "./api";
 
 // Types
 export interface Kategori {
-  id: number;
+  id: string;
   nama: string;
   slug: string;
   created_at: string;
@@ -192,13 +192,13 @@ export async function createKategoriItem(data: {
 }
 
 export async function updateKategoriItem(
-  id: number,
+  id: string,
   data: { nama: string; slug?: string },
 ): Promise<Kategori> {
   return updateItem<Kategori>(`/kategoris/${id}`, data);
 }
 
-export async function deleteKategoriItem(id: number): Promise<void> {
+export async function deleteKategoriItem(id: string): Promise<void> {
   return deleteItem(`/kategoris/${id}`);
 }
 

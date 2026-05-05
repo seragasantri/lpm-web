@@ -95,7 +95,10 @@ export async function login(
   setToken(json.data.access_token);
   const normalizedUser = {
     ...json.data.user,
-    isActive: json.data.user.is_active,
+    id: String(json.data.user.id),
+    isActive: json.data.user.is_active ?? true,
+    roles: json.data.user.roles || [],
+    created_at: (json.data.user as Record<string, unknown>).created_at as string || new Date().toISOString(),
     permissions: (json.data.user.permissions || []).map((p: string) =>
       p.replace(/_/g, "."),
     ),
@@ -493,7 +496,7 @@ export interface BeritaListResponse {
 export interface CreateBeritaData {
   judul: string;
   slug?: string;
-  kategoris_id: number;
+  kategoris_id: string;
   tanggal: string;
   gambar?: string;
   excerpt?: string;
@@ -1723,8 +1726,8 @@ export async function updateSertifikat(id: number, data: Partial<CreateSertifika
 
 export async function deleteSertifikat(id: number): Promise<void> {
   const response = await apiFetch(`/sertifikats/${id}`, { method: "DELETE" });
-  const json: ApiResponse<null> = response.json();
-  if (!json.success) throw new Error((await json).message);
+  const json: ApiResponse<null> = await response.json();
+  if (!json.success) throw new Error(json.message);
 }
 
 // Public Sertifikats (no auth)

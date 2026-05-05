@@ -48,7 +48,7 @@ export default function PollIndex() {
     e.preventDefault();
     setSaving(true);
     try {
-      await updatePoll({ pertanyaan, isActive, options });
+      await updatePoll({ pertanyaan, is_active: isActive, options });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {

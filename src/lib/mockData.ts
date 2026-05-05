@@ -5,13 +5,13 @@ const delay = () => new Promise(r => setTimeout(r, 50));
 const uid = () => Math.random().toString(36).substring(2, 11);
 
 // ============ KATEGORI BERITA ============
-const DEFAULT_KATEGORI: Kategori[] = [
-  { id: 'k1', nama: 'Akreditasi', slug: 'akreditasi', createdAt: '2024-01-01T00:00:00Z' },
-  { id: 'k2', nama: 'SPMI', slug: 'spmi', createdAt: '2024-01-01T00:00:00Z' },
-  { id: 'k3', nama: 'Inovasi Digital', slug: 'inovasi-digital', createdAt: '2024-01-01T00:00:00Z' },
-  { id: 'k4', nama: 'Sertifikasi', slug: 'sertifikasi', createdAt: '2024-01-01T00:00:00Z' },
-  { id: 'k5', nama: 'ISO', slug: 'iso', createdAt: '2024-01-01T00:00:00Z' },
-  { id: 'k6', nama: 'Lainnya', slug: 'lainnya', createdAt: '2024-01-01T00:00:00Z' },
+const DEFAULT_KATEGORI = [
+  { id: 'k1', nama: 'Akreditasi', slug: 'akreditasi', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
+  { id: 'k2', nama: 'SPMI', slug: 'spmi', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
+  { id: 'k3', nama: 'Inovasi Digital', slug: 'inovasi-digital', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
+  { id: 'k4', nama: 'Sertifikasi', slug: 'sertifikasi', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
+  { id: 'k5', nama: 'ISO', slug: 'iso', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
+  { id: 'k6', nama: 'Lainnya', slug: 'lainnya', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' },
 ];
 
 export async function getKategori(): Promise<Kategori[]> {
@@ -19,15 +19,16 @@ export async function getKategori(): Promise<Kategori[]> {
   const data = localStorage.getItem('lpm_kategori');
   if (!data) {
     localStorage.setItem('lpm_kategori', JSON.stringify(DEFAULT_KATEGORI));
-    return DEFAULT_KATEGORI;
+    return DEFAULT_KATEGORI as Kategori[];
   }
   return JSON.parse(data);
 }
 
-export async function createKategori(data: Omit<Kategori, 'id' | 'createdAt'>): Promise<Kategori> {
+export async function createKategori(data: Omit<Kategori, 'id' | 'created_at' | 'updated_at'>): Promise<Kategori> {
   await delay();
   const list = await getKategori();
-  const newItem: Kategori = { ...data, id: uid(), createdAt: new Date().toISOString() };
+  const now = new Date().toISOString();
+  const newItem: Kategori = { ...data, id: uid(), created_at: now, updated_at: now };
   list.push(newItem);
   localStorage.setItem('lpm_kategori', JSON.stringify(list));
   return newItem;
@@ -89,7 +90,7 @@ export async function getUser(id: string): Promise<User | undefined> {
   return u;
 }
 
-export async function createUser(user: Omit<User, 'id' | 'createdAt'>): Promise<User> {
+export async function createUser(user: { username: string; email: string; roleIds: string[]; isActive: boolean; password?: string }): Promise<User> {
   await delay();
   const roles = await getRoles();
   const userRoles = roles.filter(r => (user.roleIds || []).includes(r.id));
@@ -147,12 +148,12 @@ export async function loginUser(username: string, password: string): Promise<Use
 
 // ============ BERITA ============
 const DEFAULT_BERITA: Berita[] = [
-  { id: 'b1', judul: 'LPM UIN Raden Fatah Gaungkan Pentingnya Mutu dan Akreditasi dalam Apel Pagi Rektorat', slug: 'lpm-gaungkan-pentingnya-mutu-dan-akreditasi', kategori: 'Akreditasi', tanggal: '2026-04-13', excerpt: 'Sosialisasi dan penguatan komitmen mutu terus digaungkan di lingkungan UIN Raden Fatah.', konten: '<p>Sosialisasi dan penguatan komitmen mutu...</p>', status: 'published', createdAt: '2026-04-13T08:52:24Z', updatedAt: '2026-04-13T08:52:24Z', author: 'admin' },
-  { id: 'b2', judul: 'Sinergi LPM dan Senat UIN Raden Fatah dalam Penyempurnaan Dokumen SPMI', slug: 'sinergi-lpm-dan-senat-penyempurnaan-sppi', kategori: 'SPMI', tanggal: '2026-04-13', excerpt: 'Langkah strategis diambil melalui rapat sinergi antara LPM dan Senat.', konten: '<p>Rapat sinergi...</p>', status: 'published', createdAt: '2026-04-13T08:38:22Z', updatedAt: '2026-04-13T08:38:22Z', author: 'admin' },
-  { id: 'b3', judul: 'Dukung Transformasi Digital, Tim LPM UIN Raden Fatah Ikuti Pelatihan AI Gemini Academy', slug: 'transformasi-digital-gemini-academy', kategori: 'Inovasi Digital', tanggal: '2026-03-11', excerpt: 'Adopsi teknologi kecerdasan buatan.', konten: '<p>Pelatihan AI...</p>', status: 'published', createdAt: '2026-03-11T13:37:41Z', updatedAt: '2026-03-11T13:37:41Z', author: 'editor' },
-  { id: 'b4', judul: 'Perkuat Profesionalisme Dosen, LPM Serahkan 104 Sertifikat Serdos PTKI', slug: 'serahkan-104-sertifikat-sertos', kategori: 'Sertifikasi', tanggal: '2026-03-11', excerpt: '104 dosen terima sertifikat pendidik.', konten: '<p>104 dosen...</p>', status: 'published', createdAt: '2026-03-11T11:17:19Z', updatedAt: '2026-03-11T11:17:19Z', author: 'admin' },
-  { id: 'b5', judul: 'KULTURA Ramadhan 2026: LPM Ajak Sivitas Akademika Mengenal ISO 21001', slug: 'kultura-ramadhan-2026-iso-21001', kategori: 'ISO', tanggal: '2026-03-05', excerpt: 'KULTURA Ramadhan 2026.', konten: '<p>KULTURA...</p>', status: 'published', createdAt: '2026-03-05T09:29:05Z', updatedAt: '2026-03-05T09:29:05Z', author: 'admin' },
-  { id: 'b6', judul: 'KULTURA Ramadhan 2026: Bahas Tindak Lanjut AMI dan Rapat Tinjauan Manajemen', slug: 'kultura-ramadhan-2026-tindak-lanjut-ami', kategori: 'SPMI', tanggal: '2026-03-03', excerpt: 'Tindak lanjut AMI.', konten: '<p>AMI...</p>', status: 'draft', createdAt: '2026-03-03T12:32:30Z', updatedAt: '2026-03-03T12:32:30Z', author: 'editor' },
+  { id: 'b1', kategoris_id: 1, author_id: 1, judul: 'LPM UIN Raden Fatah Gaungkan Pentingnya Mutu dan Akreditasi dalam Apel Pagi Rektorat', slug: 'lpm-gaungkan-pentingnya-mutu-dan-akreditasi', kategori: 'Akreditasi', tanggal: '2026-04-13', excerpt: 'Sosialisasi dan penguatan komitmen mutu terus digaungkan di lingkungan UIN Raden Fatah.', konten: '<p>Sosialisasi dan penguatan komitmen mutu...</p>', status: 'published', created_at: '2026-04-13T08:52:24Z', updated_at: '2026-04-13T08:52:24Z', author: 'admin' },
+  { id: 'b2', kategoris_id: 2, author_id: 1, judul: 'Sinergi LPM dan Senat UIN Raden Fatah dalam Penyempurnaan Dokumen SPMI', slug: 'sinergi-lpm-dan-senat-penyempurnaan-sppi', kategori: 'SPMI', tanggal: '2026-04-13', excerpt: 'Langkah strategis diambil melalui rapat sinergi antara LPM dan Senat.', konten: '<p>Rapat sinergi...</p>', status: 'published', created_at: '2026-04-13T08:38:22Z', updated_at: '2026-04-13T08:38:22Z', author: 'admin' },
+  { id: 'b3', kategoris_id: 3, author_id: 2, judul: 'Dukung Transformasi Digital, Tim LPM UIN Raden Fatah Ikuti Pelatihan AI Gemini Academy', slug: 'transformasi-digital-gemini-academy', kategori: 'Inovasi Digital', tanggal: '2026-03-11', excerpt: 'Adopsi teknologi kecerdasan buatan.', konten: '<p>Pelatihan AI...</p>', status: 'published', created_at: '2026-03-11T13:37:41Z', updated_at: '2026-03-11T13:37:41Z', author: 'editor' },
+  { id: 'b4', kategoris_id: 4, author_id: 1, judul: 'Perkuat Profesionalisme Dosen, LPM Serahkan 104 Sertifikat Serdos PTKI', slug: 'serahkan-104-sertifikat-sertos', kategori: 'Sertifikasi', tanggal: '2026-03-11', excerpt: '104 dosen terima sertifikat pendidik.', konten: '<p>104 dosen...</p>', status: 'published', created_at: '2026-03-11T11:17:19Z', updated_at: '2026-03-11T11:17:19Z', author: 'admin' },
+  { id: 'b5', kategoris_id: 5, author_id: 1, judul: 'KULTURA Ramadhan 2026: LPM Ajak Sivitas Akademika Mengenal ISO 21001', slug: 'kultura-ramadhan-2026-iso-21001', kategori: 'ISO', tanggal: '2026-03-05', excerpt: 'KULTURA Ramadhan 2026.', konten: '<p>KULTURA...</p>', status: 'published', created_at: '2026-03-05T09:29:05Z', updated_at: '2026-03-05T09:29:05Z', author: 'admin' },
+  { id: 'b6', kategoris_id: 2, author_id: 2, judul: 'KULTURA Ramadhan 2026: Bahas Tindak Lanjut AMI dan Rapat Tinjauan Manajemen', slug: 'kultura-ramadhan-2026-tindak-lanjut-ami', kategori: 'SPMI', tanggal: '2026-03-03', excerpt: 'Tindak lanjut AMI.', konten: '<p>AMI...</p>', status: 'draft', created_at: '2026-03-03T12:32:30Z', updated_at: '2026-03-03T12:32:30Z', author: 'editor' },
 ];
 
 export async function getBerita(): Promise<Berita[]> {
@@ -162,10 +163,11 @@ export async function getBerita(): Promise<Berita[]> {
   return JSON.parse(data);
 }
 
-export async function createBerita(b: Omit<Berita, 'id' | 'createdAt' | 'updatedAt'>): Promise<Berita> {
+export async function createBerita(b: Omit<Berita, 'id' | 'created_at' | 'updated_at'>): Promise<Berita> {
   await delay();
   const list = await getBerita();
-  const item: Berita = { ...b, id: uid(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  const now = new Date().toISOString();
+  const item: Berita = { ...b, id: uid(), created_at: now, updated_at: now };
   list.unshift(item);
   localStorage.setItem('lpm_berita', JSON.stringify(list));
   return item;
@@ -176,7 +178,7 @@ export async function updateBerita(id: string, data: Partial<Berita>): Promise<B
   const list = await getBerita();
   const idx = list.findIndex(x => x.id === id);
   if (idx === -1) return undefined;
-  list[idx] = { ...list[idx], ...data, updatedAt: new Date().toISOString() };
+  list[idx] = { ...list[idx], ...data, updated_at: new Date().toISOString() };
   localStorage.setItem('lpm_berita', JSON.stringify(list));
   return list[idx];
 }

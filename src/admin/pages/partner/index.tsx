@@ -4,7 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { getPartners, deletePartner } from '../../../lib/api';
 import DataTable from '../../components/DataTable';
 import type { PartnerResponse } from '../../../lib/api';
-import { Building2, Plus, Loader, Edit, Trash2 } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 
 export default function PartnerIndex() {
   useEffect(() => { document.title = 'Partner & Sertifikasi :: LPM Admin'; }, []);

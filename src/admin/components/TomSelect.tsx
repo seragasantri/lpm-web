@@ -16,12 +16,13 @@ type TomSelectType = {
   destroy: () => void;
   sync: () => void;
   setValue: (v: string) => void;
-  clear: () => void;
+  open: () => void;
+  close: () => void;
 };
 
 declare global {
   interface Window {
-    TomSelect?: new (el: HTMLSelectElement, opts: object) => TomSelectType;
+    TomSelect?: new (el: HTMLSelectElement, opts: Record<string, unknown>) => TomSelectType;
   }
 }
 

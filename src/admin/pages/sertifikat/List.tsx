@@ -64,7 +64,7 @@ export default function SertifikatList() {
     setError(null);
     try {
       const data = await getSertifikats({ per_page: 500 });
-      setSertifikats(data.data || []);
+      setSertifikats((data.data || []).filter(s => s.prodi) as SertifikatWithProdi[]);
     } catch (err) {
       console.error('Error loading data:', err);
       setError(err instanceof Error ? err.message : 'Gagal memuat data');

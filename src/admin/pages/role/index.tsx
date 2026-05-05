@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { getRoles, createRole, updateRole, deleteRole, getPermissions, type RoleResponse } from '../../../lib/api';
 import DataTable from '../../components/DataTable';
-import { Shield, Plus, Pencil, Trash2, X, Save, Check, ShieldCheck, ChevronDown, ChevronRight } from 'lucide-react';
+import { Shield, Plus, X, Save, Check, ShieldCheck, ChevronDown, ChevronRight } from 'lucide-react';
 
 type GroupedPermissions = Record<string, { id: number; name: string; modul?: string; aplikasi: string }[]>;
 

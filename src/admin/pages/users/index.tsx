@@ -316,7 +316,7 @@ export default function UsersIndex() {
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-2 max-h-[40vh] overflow-y-auto pr-1">
-                  {roles.map((role, i) => {
+                  {roles.map((role) => {
                     const isActive = form.roleIds.includes(role.id);
                     return (
                       <label

@@ -10,7 +10,7 @@ export interface User {
 }
 
 export interface Kategori {
-  id: number;
+  id: string;
   nama: string;
   slug: string;
   created_at: string;
@@ -33,15 +33,11 @@ export interface Prodi {
 }
 
 export interface Berita {
-  id: number;
+  id: string;
   judul: string;
   slug: string;
   kategoris_id: number;
-  kategori: {
-    id: number;
-    nama: string;
-    slug: string;
-  };
+  kategori: string;
   tanggal: string;
   gambar?: string;
   excerpt?: string;
@@ -49,16 +45,11 @@ export interface Berita {
   status: 'draft' | 'published' | 'archived';
   meta_title?: string;
   author_id: number;
-  author: {
-    id: number;
-    username: string;
-    email: string;
-  };
+  author: string;
   created_at: string;
   updated_at: string;
 }
 
-// Response types untuk backward compatibility
 export interface BeritaListItem extends Omit<Berita, 'kategori' | 'author'> {
   kategori: string;
   author: string;

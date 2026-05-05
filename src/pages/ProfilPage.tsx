@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ShieldCheck, MapPin, Building, Phone, Mail, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Layout from '../components/Layout';
 import { getPublicHalaman, getPublicVisiMisi, getPublicKontak } from '../lib/api';
 import { contactInfo } from '../data/navigation';
 
@@ -89,7 +88,7 @@ export default function ProfilPage() {
         <div>
           <h2 className="text-2xl font-bold text-slate-800 mb-6">Misi</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {(visimisi?.items ?? missions.map((m, i) => ({ deskripsi: m }))).map((mission, index) => (
+            {(visimisi?.items ?? missions.map((m) => ({ deskripsi: m }))).map((mission, index) => (
               <div
                 key={index}
                 className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow"
