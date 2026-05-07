@@ -178,7 +178,9 @@ export async function getKategori(): Promise<Kategori[]> {
 
 // Public version for frontend pages (no auth required)
 export async function getKategoriPublic(): Promise<Kategori[]> {
-  const response = await fetch(`${import.meta.env.VITE_API_URL}/public/kategoris`);
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL}/public/kategoris`,
+  );
   const json: ApiResponse<Kategori[]> = await response.json();
   if (!json.success) throw new Error(json.message);
   return json.data;
@@ -262,7 +264,7 @@ export function useCreateBerita() {
   return useMutation({
     mutationFn: (data: FormData) =>
       fetch(
-        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/beritas`,
+        `${import.meta.env.VITE_API_URL || "http://localhost:3001/api"}/beritas`,
         {
           method: "POST",
           headers: {
@@ -280,7 +282,7 @@ export function useUpdateBerita() {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: FormData }) =>
       fetch(
-        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/beritas/${id}`,
+        `${import.meta.env.VITE_API_URL || "http://localhost:3001/api"}/beritas/${id}`,
         {
           method: "POST",
           headers: {
@@ -323,7 +325,7 @@ export function useCreateGaleri() {
   return useMutation({
     mutationFn: (data: FormData) =>
       fetch(
-        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/galeris`,
+        `${import.meta.env.VITE_API_URL || "http://localhost:3001/api"}/galeris`,
         {
           method: "POST",
           headers: {
@@ -341,7 +343,7 @@ export function useUpdateGaleri() {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: FormData }) =>
       fetch(
-        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/galeris/${id}`,
+        `${import.meta.env.VITE_API_URL || "http://localhost:3001/api"}/galeris/${id}`,
         {
           method: "POST",
           headers: {
@@ -375,7 +377,7 @@ export function useCreateDownload() {
   return useMutation({
     mutationFn: (data: FormData) =>
       fetch(
-        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/downloads`,
+        `${import.meta.env.VITE_API_URL || "http://localhost:3001/api"}/downloads`,
         {
           method: "POST",
           headers: {
@@ -393,7 +395,7 @@ export function useUpdateDownload() {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: FormData }) =>
       fetch(
-        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/downloads/${id}`,
+        `${import.meta.env.VITE_API_URL || "http://localhost:3001/api"}/downloads/${id}`,
         {
           method: "POST",
           headers: {
@@ -427,7 +429,7 @@ export function useCreateStaf() {
   return useMutation({
     mutationFn: (data: FormData) =>
       fetch(
-        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/stafs`,
+        `${import.meta.env.VITE_API_URL || "http://localhost:3001/api"}/stafs`,
         {
           method: "POST",
           headers: {
@@ -445,7 +447,7 @@ export function useUpdateStaf() {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: FormData }) =>
       fetch(
-        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/stafs/${id}`,
+        `${import.meta.env.VITE_API_URL || "http://localhost:3001/api"}/stafs/${id}`,
         {
           method: "POST",
           headers: {
@@ -479,7 +481,7 @@ export function useCreateSertifikat() {
   return useMutation({
     mutationFn: (data: FormData) =>
       fetch(
-        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/sertifikats`,
+        `${import.meta.env.VITE_API_URL || "http://localhost:3001/api"}/sertifikats`,
         {
           method: "POST",
           headers: {
@@ -498,7 +500,7 @@ export function useUpdateSertifikat() {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: FormData }) =>
       fetch(
-        `${import.meta.env.VITE_API_URL || "https://api-lpm.test/api"}/sertifikats/${id}`,
+        `${import.meta.env.VITE_API_URL || "http://localhost:3001/api"}/sertifikats/${id}`,
         {
           method: "POST",
           headers: {

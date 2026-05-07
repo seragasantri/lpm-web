@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || "https://api-lpm.test/api";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
 // Token refresh state
 let isRefreshing = false;
@@ -38,7 +38,7 @@ function clearAuth() {
 
 // Notify all subscribers of new token
 function onTokenRefreshed(token: string) {
-  refreshSubscribers.forEach(callback => callback(token));
+  refreshSubscribers.forEach((callback) => callback(token));
   refreshSubscribers = [];
 }
 
@@ -85,7 +85,7 @@ async function doRefreshToken(): Promise<string> {
 }
 
 // Auto-refresh token periodically
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   setInterval(async () => {
     const token = getToken();
     if (!token) return;
@@ -95,7 +95,7 @@ if (typeof window !== 'undefined') {
         isRefreshing = true;
         await doRefreshToken();
       } catch (error) {
-        console.error('Auto-refresh failed:', error);
+        console.error("Auto-refresh failed:", error);
       } finally {
         isRefreshing = false;
       }
@@ -142,7 +142,16 @@ async function apiFetch(
   if (response.status === 401 && !isRefreshing) {
     clearAuth();
     // Redirect to login if not already on login page
-    if (!window.location.pathname.includes("/login")) {
+    if (
+      !window.location.pathname.includes("/login") &&
+      !window.location.pathname.includes("/admin")
+    ) {
+      // Store the current URL to redirect back after login
+      const currentPath = window.location.pathname + window.location.search;
+      localStorage.setItem("redirectAfterLogin", currentPath);
+      window.location.href = "/login";
+    } else if (window.location.pathname.includes("/admin")) {
+      // For admin routes, redirect to admin login
       window.location.href = "/login";
     }
   }
@@ -194,12 +203,16 @@ export async function login(
     id: String(json.data.user.id),
     isActive: json.data.user.is_active ?? true,
     roles: json.data.user.roles || [],
-    created_at: (json.data.user as Record<string, unknown>).created_at as string || new Date().toISOString(),
+    created_at:
+      ((json.data.user as Record<string, unknown>).created_at as string) ||
+      new Date().toISOString(),
     permissions: (json.data.user.permissions || []).map((p: string) =>
       p.replace(/_/g, "."),
     ),
   };
   setUser(JSON.stringify(normalizedUser));
+
+  localStorage.removeItem("redirectAfterLogin");
 
   return json.data;
 }
@@ -723,7 +736,10 @@ export async function getPublicBeritas(params?: GetBeritasParams): Promise<{
   return json.data;
 }
 
-export async function getPublicBeritasByTag(tagSlug: string, params?: { per_page?: number }): Promise<{
+export async function getPublicBeritasByTag(
+  tagSlug: string,
+  params?: { per_page?: number },
+): Promise<{
   data: BeritaResponse[];
   current_page: number;
   per_page: number;
@@ -982,7 +998,7 @@ export async function getSambutan(): Promise<SambutanResponse> {
   const response = await apiFetch("/profil/sambutan");
   const json: ApiResponse<SambutanResponse> = await response.json();
   if (!json.success) throw new Error(json.message);
-  return json.data || { nama: '', jabatan: '', konten: '', foto: null };
+  return json.data || { nama: "", jabatan: "", konten: "", foto: null };
 }
 
 export async function updateSambutan(data: {
@@ -1022,7 +1038,9 @@ export interface HalamanResponse {
   updated_at: string;
 }
 
-export async function getHalaman(slug: string): Promise<HalamanResponse | null> {
+export async function getHalaman(
+  slug: string,
+): Promise<HalamanResponse | null> {
   try {
     const response = await apiFetch(`/halamans/${slug}`);
     const json: ApiResponse<HalamanResponse> = await response.json();
@@ -1033,7 +1051,10 @@ export async function getHalaman(slug: string): Promise<HalamanResponse | null> 
   }
 }
 
-export async function updateHalaman(slug: string, data: { konten: string }): Promise<HalamanResponse> {
+export async function updateHalaman(
+  slug: string,
+  data: { konten: string },
+): Promise<HalamanResponse> {
   const response = await apiFetch(`/halamans/${slug}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -1044,10 +1065,13 @@ export async function updateHalaman(slug: string, data: { konten: string }): Pro
 }
 
 // Public Halaman (no auth)
-export async function getPublicHalaman(slug: string): Promise<{ judul: string; konten: string } | null> {
+export async function getPublicHalaman(
+  slug: string,
+): Promise<{ judul: string; konten: string } | null> {
   try {
     const response = await fetch(`${API_BASE}/public/halamans/${slug}`);
-    const json: ApiResponse<{ judul: string; konten: string }> = await response.json();
+    const json: ApiResponse<{ judul: string; konten: string }> =
+      await response.json();
     if (!json.success) throw new Error(json.message);
     return json.data;
   } catch {
@@ -1080,7 +1104,10 @@ export async function getVisiMisi(): Promise<VisiMisiResponse | null> {
   }
 }
 
-export async function updateVisiMisi(data: { visi: string; misi: Array<{ id?: number; no: number; judul: string; deskripsi?: string }> }): Promise<VisiMisiResponse> {
+export async function updateVisiMisi(data: {
+  visi: string;
+  misi: Array<{ id?: number; no: number; judul: string; deskripsi?: string }>;
+}): Promise<VisiMisiResponse> {
   const response = await apiFetch("/profil/visimisi", {
     method: "PUT",
     body: JSON.stringify(data),
@@ -1091,18 +1118,21 @@ export async function updateVisiMisi(data: { visi: string; misi: Array<{ id?: nu
 }
 
 // Public Visi Misi (no auth)
-export async function getPublicVisiMisi(): Promise<{ visi: string; items: Array<{ no: number; judul: string; deskripsi: string }> } | null> {
+export async function getPublicVisiMisi(): Promise<{
+  visi: string;
+  items: Array<{ no: number; judul: string; deskripsi: string }>;
+} | null> {
   try {
     const response = await fetch(`${API_BASE}/public/profil/visimisi`);
     const json: ApiResponse<VisiMisiResponse> = await response.json();
     if (!json.success) throw new Error(json.message);
     const data = json.data;
     return {
-      visi: data.visi || '',
+      visi: data.visi || "",
       items: (data.items || []).map((item) => ({
         no: item.no,
         judul: item.judul,
-        deskripsi: item.deskripsi || '',
+        deskripsi: item.deskripsi || "",
       })),
     };
   } catch {
@@ -1150,17 +1180,22 @@ export async function updateKontak(data: {
 }
 
 // Public Kontak (no auth)
-export async function getPublicKontak(): Promise<{ alamat: string; gedung?: string; telepon: string; email: string } | null> {
+export async function getPublicKontak(): Promise<{
+  alamat: string;
+  gedung?: string;
+  telepon: string;
+  email: string;
+} | null> {
   try {
     const response = await fetch(`${API_BASE}/public/profil/kontak`);
     const json: ApiResponse<KontakResponse> = await response.json();
     if (!json.success) throw new Error(json.message);
     const data = json.data;
     return {
-      alamat: data.alamat || '',
+      alamat: data.alamat || "",
       gedung: data.gedung || undefined,
-      telepon: data.telepon || '',
-      email: data.email || '',
+      telepon: data.telepon || "",
+      email: data.email || "",
     };
   } catch {
     return null;
@@ -1188,7 +1223,11 @@ export async function getStruktur(): Promise<StrukturResponse | null> {
   }
 }
 
-export async function updateStruktur(data: { deskripsi?: string; gambar?: string; file_pdf?: string }): Promise<StrukturResponse> {
+export async function updateStruktur(data: {
+  deskripsi?: string;
+  gambar?: string;
+  file_pdf?: string;
+}): Promise<StrukturResponse> {
   const response = await apiFetch("/profil/struktur", {
     method: "PUT",
     body: JSON.stringify(data),
@@ -1199,7 +1238,10 @@ export async function updateStruktur(data: { deskripsi?: string; gambar?: string
 }
 
 // Public Struktur (no auth)
-export async function getPublicStruktur(): Promise<{ deskripsi?: string; gambar?: string } | null> {
+export async function getPublicStruktur(): Promise<{
+  deskripsi?: string;
+  gambar?: string;
+} | null> {
   try {
     const response = await fetch(`${API_BASE}/public/profil/struktur`);
     const json: ApiResponse<StrukturResponse> = await response.json();
@@ -1270,14 +1312,17 @@ export async function createStaf(data: {
   return json.data;
 }
 
-export async function updateStaf(id: number, data: Partial<{
-  nama: string;
-  jabatan: string;
-  foto: string;
-  program_studi: string;
-  email: string;
-  urutan: number;
-}>): Promise<StafResponse> {
+export async function updateStaf(
+  id: number,
+  data: Partial<{
+    nama: string;
+    jabatan: string;
+    foto: string;
+    program_studi: string;
+    email: string;
+    urutan: number;
+  }>,
+): Promise<StafResponse> {
   const response = await apiFetch(`/stafs/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -1335,13 +1380,16 @@ export async function createDownload(data: {
   return json.data;
 }
 
-export async function updateDownload(id: number, data: Partial<{
-  judul: string;
-  tipe: string;
-  url: string;
-  tanggal: string;
-  ukuran: string;
-}>): Promise<DownloadResponse> {
+export async function updateDownload(
+  id: number,
+  data: Partial<{
+    judul: string;
+    tipe: string;
+    url: string;
+    tanggal: string;
+    ukuran: string;
+  }>,
+): Promise<DownloadResponse> {
   const response = await apiFetch(`/downloads/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -1415,7 +1463,10 @@ export async function votePoll(optionId: number): Promise<void> {
 }
 
 // Public Poll (no auth)
-export async function getPublicPoll(): Promise<{ pertanyaan: string; options: PollOptionResponse[] } | null> {
+export async function getPublicPoll(): Promise<{
+  pertanyaan: string;
+  options: PollOptionResponse[];
+} | null> {
   try {
     const response = await fetch(`${API_BASE}/public/polls`);
     const json: ApiResponse<PollResponse> = await response.json();
@@ -1423,8 +1474,12 @@ export async function getPublicPoll(): Promise<{ pertanyaan: string; options: Po
     const data = json.data;
     if (!data) return null;
     return {
-      pertanyaan: data.pertanyaan || '',
-      options: (data.options || []).map((o) => ({ id: o.id, label: o.label, votes: o.votes })),
+      pertanyaan: data.pertanyaan || "",
+      options: (data.options || []).map((o) => ({
+        id: o.id,
+        label: o.label,
+        votes: o.votes,
+      })),
     };
   } catch {
     return null;
@@ -1464,12 +1519,15 @@ export async function createPartner(data: {
   return json.data;
 }
 
-export async function updatePartner(id: number, data: Partial<{
-  nama: string;
-  logo_url: string;
-  link_url: string;
-  urutan: number;
-}>): Promise<PartnerResponse> {
+export async function updatePartner(
+  id: number,
+  data: Partial<{
+    nama: string;
+    logo_url: string;
+    link_url: string;
+    urutan: number;
+  }>,
+): Promise<PartnerResponse> {
   const response = await apiFetch(`/partners/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -1514,7 +1572,10 @@ export async function getTags(): Promise<TagResponse[]> {
   return json.data || [];
 }
 
-export async function createTag(data: { nama: string; slug?: string }): Promise<TagResponse> {
+export async function createTag(data: {
+  nama: string;
+  slug?: string;
+}): Promise<TagResponse> {
   const response = await apiFetch("/tags", {
     method: "POST",
     body: JSON.stringify(data),
@@ -1524,7 +1585,10 @@ export async function createTag(data: { nama: string; slug?: string }): Promise<
   return json.data;
 }
 
-export async function updateTag(id: number, data: { nama: string; slug?: string }): Promise<TagResponse> {
+export async function updateTag(
+  id: number,
+  data: { nama: string; slug?: string },
+): Promise<TagResponse> {
   const response = await apiFetch(`/tags/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -1609,12 +1673,12 @@ export async function getPublicHeroSettings(): Promise<{
     const data = json.data;
     if (!data) return null;
     return {
-      title: data.title || '',
-      subtitle: data.subtitle || '',
+      title: data.title || "",
+      subtitle: data.subtitle || "",
       background_url: data.background_url,
       video_url: data.video_url,
-      cta_text: data.cta_text || '',
-      cta_link: data.cta_link || '',
+      cta_text: data.cta_text || "",
+      cta_link: data.cta_link || "",
     };
   } catch {
     return null;
@@ -1657,14 +1721,17 @@ export async function createQuickAccessItem(data: {
   return json.data;
 }
 
-export async function updateQuickAccessItem(id: number, data: Partial<{
-  judul: string;
-  deskripsi: string;
-  icon: string;
-  link_url: string;
-  urutan: number;
-  is_active: boolean;
-}>): Promise<QuickAccessResponse> {
+export async function updateQuickAccessItem(
+  id: number,
+  data: Partial<{
+    judul: string;
+    deskripsi: string;
+    icon: string;
+    link_url: string;
+    urutan: number;
+    is_active: boolean;
+  }>,
+): Promise<QuickAccessResponse> {
   const response = await apiFetch(`/quick-access/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -1681,7 +1748,9 @@ export async function deleteQuickAccessItem(id: number): Promise<void> {
 }
 
 // Public Quick Access (no auth)
-export async function getPublicQuickAccessItems(): Promise<QuickAccessResponse[]> {
+export async function getPublicQuickAccessItems(): Promise<
+  QuickAccessResponse[]
+> {
   try {
     const response = await fetch(`${API_BASE}/public/quick-access`);
     const json: ApiResponse<QuickAccessResponse[]> = await response.json();
@@ -1720,11 +1789,14 @@ export async function createInfoTerkinin(data: {
   return json.data;
 }
 
-export async function updateInfoTerkinin(id: number, data: Partial<{
-  teks: string;
-  urutan: number;
-  is_active: boolean;
-}>): Promise<InfoTerkininResponse> {
+export async function updateInfoTerkinin(
+  id: number,
+  data: Partial<{
+    teks: string;
+    urutan: number;
+    is_active: boolean;
+  }>,
+): Promise<InfoTerkininResponse> {
   const response = await apiFetch(`/info-terkini/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -1747,7 +1819,7 @@ export async function getPublicInfoTerkini(): Promise<string[]> {
     if (!response.ok) return [];
     const json: ApiResponse<InfoTerkininResponse[]> = await response.json();
     if (!json.success) return [];
-    return (json.data || []).map(item => item.teks);
+    return (json.data || []).map((item) => item.teks);
   } catch {
     return [];
   }
@@ -1763,17 +1835,17 @@ export interface SertifikatResponse {
   nilai: string | null;
   skor: string;
   file_sk: string | null;
-  created_at: string;
-  updated_at: string;
-  prodi?: {
+  created_at: string | null;
+  updated_at: string | null;
+  prodi: {
     id: number;
     kode_prodi: string;
     nama_prodi: string;
-    fakultases_id: number;
-    fakulta?: {
+    fakultas_id: number;
+    fakultas: {
       id: number;
-      kode_fakulta: string;
-      nama_fakulta: string;
+      kode_fakultas: string;
+      nama_fakultas: string;
     };
   };
 }
@@ -1788,7 +1860,11 @@ export interface CreateSertifikatData {
   file_sk?: string;
 }
 
-export async function getSertifikats(params?: { per_page?: number; page?: number; prodis_id?: number }): Promise<{
+export async function getSertifikats(params?: {
+  per_page?: number;
+  page?: number;
+  prodis_id?: number;
+}): Promise<{
   data: SertifikatResponse[];
   current_page: number;
   per_page: number;
@@ -1798,7 +1874,8 @@ export async function getSertifikats(params?: { per_page?: number; page?: number
   const searchParams = new URLSearchParams();
   if (params?.per_page) searchParams.set("per_page", String(params.per_page));
   if (params?.page) searchParams.set("page", String(params.page));
-  if (params?.prodis_id) searchParams.set("prodis_id", String(params.prodis_id));
+  if (params?.prodis_id)
+    searchParams.set("prodis_id", String(params.prodis_id));
 
   const query = searchParams.toString();
   const response = await apiFetch(`/sertifikats${query ? `?${query}` : ""}`);
@@ -1820,7 +1897,9 @@ export async function getSertifikat(id: number): Promise<SertifikatResponse> {
   return json.data;
 }
 
-export async function createSertifikat(data: CreateSertifikatData): Promise<SertifikatResponse> {
+export async function createSertifikat(
+  data: CreateSertifikatData,
+): Promise<SertifikatResponse> {
   const response = await apiFetch("/sertifikats", {
     method: "POST",
     body: JSON.stringify(data),
@@ -1830,7 +1909,10 @@ export async function createSertifikat(data: CreateSertifikatData): Promise<Sert
   return json.data;
 }
 
-export async function updateSertifikat(id: number, data: Partial<CreateSertifikatData>): Promise<SertifikatResponse> {
+export async function updateSertifikat(
+  id: number,
+  data: Partial<CreateSertifikatData>,
+): Promise<SertifikatResponse> {
   const response = await apiFetch(`/sertifikats/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -1867,7 +1949,7 @@ export interface ProdiResponse {
   fakultases_id: number;
   created_at: string;
   updated_at: string;
-  fakulta?: {
+  fakulta: {
     id: number;
     kode_fakulta: string;
     nama_fakulta: string;
