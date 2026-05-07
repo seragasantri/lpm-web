@@ -234,7 +234,7 @@ export default function Navbar() {
             <span>{dateStr}</span>
           </div>
           <div className="flex items-center gap-3">
-            <LanguageSwitcher />
+
             <span className="text-sky-200 hidden sm:block">|</span>
             <a
               href="http://radenfatah.ac.id"
