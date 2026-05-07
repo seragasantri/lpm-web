@@ -1,7 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_URL || "https://api-lpm.test/api";
 
 // Token refresh state
-let lastActivityTime = Date.now();
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
 
@@ -35,16 +34,6 @@ function clearAuth() {
   localStorage.removeItem("lpm_token");
   localStorage.removeItem("lpm_token_expiry");
   localStorage.removeItem("lpm_user");
-}
-
-// Update activity timestamp
-function updateActivity() {
-  lastActivityTime = Date.now();
-}
-
-// Subscribe to token refresh
-function subscribeTokenRefresh(callback: (token: string) => void) {
-  refreshSubscribers.push(callback);
 }
 
 // Notify all subscribers of new token
@@ -95,18 +84,12 @@ async function doRefreshToken(): Promise<string> {
   }
 }
 
-// Track user activity - update on any interaction
+// Auto-refresh token periodically
 if (typeof window !== 'undefined') {
-  ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(event => {
-    window.addEventListener(event, updateActivity, { passive: true });
-  });
-
-  // Check for activity every minute
   setInterval(async () => {
     const token = getToken();
     if (!token) return;
 
-    // If there's been activity since last check AND token needs refresh
     if (shouldRefreshToken() && !isRefreshing) {
       try {
         isRefreshing = true;
@@ -126,9 +109,6 @@ async function apiFetch(
 ): Promise<Response> {
   let token = getToken();
   const lang = localStorage.getItem("language") || "id";
-
-  // Update activity on every request
-  updateActivity();
 
   // If token needs refresh, do it first (but only one at a time)
   if (token && shouldRefreshToken() && !isRefreshing) {

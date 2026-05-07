@@ -124,43 +124,45 @@ export default function FileUpload({
             <Loader className="w-8 h-8 animate-spin mb-2" />
             <span className="text-sm">Mengunggah...</span>
           </div>
-        ) : hasFile && preview && isImage && !previewError ? (
-          <div className="relative p-4">
-            <img
-              src={value}
-              alt="Preview"
-              className="w-full max-h-48 object-contain rounded-lg"
-              onError={() => setPreviewError(true)}
-            />
-            {!disabled && (
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); handleRemove(); }}
-                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-        ) : hasFile && preview && !isImage ? (
-          <div className="flex items-center gap-3 p-4">
-            <div className="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center">
-              {isImage ? <Image size={20} className="text-sky-500" /> : <File size={20} className="text-sky-500" />}
+        ) : hasFile && preview ? (
+          isImage ? (
+            <div className="relative p-4">
+              <img
+                src={value}
+                alt="Preview"
+                className="w-full max-h-48 object-contain rounded-lg"
+                onError={() => setPreviewError(true)}
+              />
+              {!disabled && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleRemove(); }}
+                  className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-700 truncate">File selected</p>
-              <p className="text-xs text-slate-400 truncate">{value.substring(0, 50)}...</p>
+          ) : (
+            <div className="flex items-center gap-3 p-4">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <File size={20} className="text-green-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-700">File uploaded successfully</p>
+                <p className="text-xs text-slate-400 truncate">{value.split('/').pop()}</p>
+              </div>
+              {!disabled && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleRemove(); }}
+                  className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              )}
             </div>
-            {!disabled && (
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); handleRemove(); }}
-                className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-              >
-                <X size={16} />
-              </button>
-            )}
-          </div>
+          )
         ) : previewError ? (
           <div className="flex flex-col items-center justify-center py-10 text-slate-400">
             <Image size={32} className="mb-2 opacity-50" />

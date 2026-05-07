@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, Save, AlertCircle } from 'lucide-react';
 import type { DownloadFile } from '../../../lib/types';
-import { getDownloads, createDownload, updateDownload } from '../../../lib/mockData';
+import { getDownloads, createDownload, updateDownload } from '../../../lib/api';
 import { useAuth } from '../../../context/AuthContext';
 import SelectInput from '../../components/SelectInput';
 import FileUpload from '../../components/FileUpload';
@@ -43,7 +43,7 @@ export default function DownloadForm({ editId }: DownloadFormProps) {
     if (!editId) return;
     setFetching(true);
     getDownloads().then((list) => {
-      const found = list.find((d) => d.id === editId);
+      const found = list.find((d) => d.id === Number(editId));
       if (found) {
         setForm({
           judul: found.judul,
@@ -83,7 +83,7 @@ export default function DownloadForm({ editId }: DownloadFormProps) {
       };
 
       if (isEdit && editId) {
-        await updateDownload(editId, payload);
+        await updateDownload(Number(editId), payload);
       } else {
         await createDownload(payload);
       }
@@ -97,15 +97,15 @@ export default function DownloadForm({ editId }: DownloadFormProps) {
 
   const showUkuran = form.tipe.toLowerCase() !== 'link';
 
-function getAcceptForTipe(tipe: string): string {
-  switch (tipe.toUpperCase()) {
-    case 'PDF': return '.pdf,application/pdf';
-    case 'DOC': return '.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    case 'XLS': return '.xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    case 'ZIP': return '.zip,application/zip';
-    default: return '*/*';
+  function getAcceptForTipe(tipe: string): string {
+    switch (tipe.toUpperCase()) {
+      case 'PDF': return '.pdf,application/pdf';
+      case 'DOC': return '.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      case 'XLS': return '.xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      case 'ZIP': return '.zip,application/zip';
+      default: return '*/*';
+    }
   }
-}
 
   if (fetching) {
     return (
