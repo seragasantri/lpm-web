@@ -27,7 +27,10 @@ export default function Login() {
 
     try {
       await login(username, password);
-      navigate('/admin');
+      // Check if there's a redirect URL stored
+      const redirectUrl = localStorage.getItem('redirectAfterLogin');
+      localStorage.removeItem('redirectAfterLogin');
+      navigate(redirectUrl || '/admin');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login gagal. Silakan coba lagi.');
     } finally {

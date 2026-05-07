@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { X, ChevronLeft, ChevronRight, Camera, Loader } from 'lucide-react';
 import { getPublicGaleris, type GaleriResponse } from '../lib/api';
 
-const API_FILE = import.meta.env.VITE_API_FILE || 'https://api-lpm.test';
+const API_FILE = import.meta.env.VITE_API_FILE || 'http://localhost:3001';
 
 const KATEGORI_COLORS: Record<string, string> = {
   Audit: 'bg-blue-500',
@@ -134,11 +134,10 @@ export default function GaleriPage() {
             <button
               key={category}
               onClick={() => setActiveCategory(category)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${
-                activeCategory === category
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${activeCategory === category
                   ? 'bg-sky-600 text-white'
                   : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-              }`}
+                }`}
             >
               {category}
             </button>

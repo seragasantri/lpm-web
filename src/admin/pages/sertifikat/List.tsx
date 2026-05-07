@@ -2,7 +2,32 @@ import { useState, useEffect, useMemo, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Award, Plus, FileDown, X, Eye } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
-import { getSertifikats, deleteSertifikat, type SertifikatResponse } from '../../../lib/api';
+import { getSertifikats, deleteSertifikat } from '../../../lib/api';
+
+// Interface disesuaikan dengan response backend secara akurat
+export interface SertifikatResponse {
+  id: number;
+  prodis_id: number;
+  jenjang: string;
+  mulai_aktif: string;
+  akhir_aktif: string;
+  nilai: string | null;
+  skor: string;
+  file_sk: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  prodi: {
+    id: number;
+    kode_prodi: string;
+    nama_prodi: string;
+    fakultas_id: number;
+    fakultas: {
+      id: number;
+      kode_fakultas: string;
+      nama_fakultas: string;
+    };
+  };
+}
 
 const JENJANG_STYLES: Record<string, string> = {
   S1: 'bg-blue-100 text-blue-700',
@@ -17,26 +42,12 @@ const SKOR_STYLES: Record<string, string> = {
   'Baik Sekali': 'bg-purple-100 text-purple-700',
 };
 
-interface SertifikatWithProdi extends SertifikatResponse {
-  prodi: {
-    id: number;
-    kode_prodi: string;
-    nama_prodi: string;
-    fakultases_id: number;
-    fakulta?: {
-      id: number;
-      kode_fakulta: string;
-      nama_fakulta: string;
-    };
-  };
-}
-
 interface GroupedProdi {
   prodiId: number;
   prodiNama: string;
   prodiKode: string;
   fakultaNama: string;
-  sertifikats: SertifikatWithProdi[];
+  sertifikats: SertifikatResponse[];
 }
 
 interface GroupedByFakulta {
@@ -47,10 +58,11 @@ interface GroupedByFakulta {
 export default function SertifikatList() {
   useEffect(() => { document.title = 'Manajemen Sertifikat :: LPM Admin'; }, []);
   const { hasPermission } = useAuth();
-  const [sertifikats, setSertifikats] = useState<SertifikatWithProdi[]>([]);
+  const [sertifikats, setSertifikats] = useState<SertifikatResponse[]>([]);
+  console.log("🚀 ~ SertifikatList ~ sertifikats:", sertifikats)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedProdiSertifikats, setSelectedProdiSertifikats] = useState<SertifikatWithProdi[]>([]);
+  const [selectedProdiSertifikats, setSelectedProdiSertifikats] = useState<SertifikatResponse[]>([]);
   const [modalProdiNama, setModalProdiNama] = useState<string>('');
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
@@ -59,12 +71,25 @@ export default function SertifikatList() {
     loadData();
   }, []);
 
+
+  // ... (Bagian import dan interface tetap sama)
+
   async function loadData() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getSertifikats({ per_page: 500 });
-      setSertifikats((data.data || []).filter(s => s.prodi) as SertifikatWithProdi[]);
+      const response = await getSertifikats({ per_page: 500 });
+
+      // PERBAIKAN: Pastikan kita mengambil array data. 
+      // Jika response API langsung array, gunakan response. Jika dibungkus, gunakan response.data
+      const rawData = Array.isArray(response) ? response : response?.data || [];
+
+      console.log("🚀 ~ Raw Data check:", rawData);
+
+      // Filter hanya data yang punya relasi prodi agar tidak crash saat grouping
+      const validData = rawData.filter((s: SertifikatResponse) => s.prodi && s.prodi.nama_prodi);
+
+      setSertifikats(validData);
     } catch (err) {
       console.error('Error loading data:', err);
       setError(err instanceof Error ? err.message : 'Gagal memuat data');
@@ -73,41 +98,52 @@ export default function SertifikatList() {
     }
   }
 
-  // Group by prodi and fakulta using useMemo
-  const groupedByFakulta = useMemo((): GroupedByFakulta[] => {
+  // Group by prodi and fakultas using useMemo
+  const groupedByFakultas = useMemo((): GroupedByFakulta[] => {
+    if (sertifikats.length === 0) return [];
+
     const prodiMap: Record<number, GroupedProdi> = {};
 
     sertifikats.forEach((sertifikat) => {
       const prodi = sertifikat.prodi;
-      if (!prodi) return;
+      // Gunakan fallback jika fakultas null
+      const namaFakultas = prodi.fakultas?.nama_fakultas || 'Fakultas Tidak Terdefinisi';
 
       if (!prodiMap[prodi.id]) {
         prodiMap[prodi.id] = {
           prodiId: prodi.id,
           prodiNama: prodi.nama_prodi,
           prodiKode: prodi.kode_prodi,
-          fakultaNama: prodi.fakulta?.nama_fakulta || 'Lainnya',
+          fakultaNama: namaFakultas,
           sertifikats: [],
         };
       }
-
       prodiMap[prodi.id].sertifikats.push(sertifikat);
     });
 
-    const fakultaMap: Record<string, GroupedByFakulta> = {};
+    const fakultasMap: Record<string, GroupedByFakulta> = {};
 
-    Object.values(prodiMap).forEach((prodi) => {
-      const key = prodi.fakultaNama;
-      if (!fakultaMap[key]) {
-        fakultaMap[key] = { fakultaNama: key, prodis: [] };
+    Object.values(prodiMap).forEach((prodiGroup) => {
+      const key = prodiGroup.fakultaNama;
+      if (!fakultasMap[key]) {
+        fakultasMap[key] = { fakultaNama: key, prodis: [] };
       }
-      fakultaMap[key].prodis.push(prodi);
+      fakultasMap[key].prodis.push(prodiGroup);
     });
 
-    return Object.values(fakultaMap).sort((a, b) =>
+    return Object.values(fakultasMap).sort((a, b) =>
       a.fakultaNama.localeCompare(b.fakultaNama)
     );
   }, [sertifikats]);
+
+  // ... (Sisa render function tetap sama)
+  // Helper function untuk sorting tanggal yang aman (handling null)
+  const getSafeTimestamp = (dateStr: string | null | undefined): number => {
+    if (!dateStr) return 0;
+    const time = new Date(dateStr).getTime();
+    return isNaN(time) ? 0 : time;
+  };
+
 
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return '-';
@@ -115,7 +151,7 @@ export default function SertifikatList() {
     return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
-  const handleDelete = async (item: SertifikatWithProdi) => {
+  const handleDelete = async (item: SertifikatResponse) => {
     if (!confirm('Yakin ingin menghapus sertifikat ini?')) return;
     try {
       await deleteSertifikat(item.id);
@@ -126,7 +162,7 @@ export default function SertifikatList() {
   };
 
   const handleCreate = () => navigate('/admin/sertifikat/create');
-  const handleEdit = (item: SertifikatWithProdi) => navigate(`/admin/sertifikat/${item.id}/edit`);
+  const handleEdit = (item: SertifikatResponse) => navigate(`/admin/sertifikat/${item.id}/edit`);
 
   const openHistoryModal = (groupProdi: GroupedProdi) => {
     setSelectedProdiSertifikats(groupProdi.sertifikats);
@@ -211,14 +247,14 @@ export default function SertifikatList() {
               </tr>
             </thead>
             <tbody>
-              {groupedByFakulta.length === 0 ? (
+              {groupedByFakultas.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="text-center py-20 text-slate-400">
                     Belum ada data sertifikat.
                   </td>
                 </tr>
               ) : (
-                groupedByFakulta.map(group => (
+                groupedByFakultas.map(group => (
                   <Fragment key={group.fakultaNama}>
                     {/* Group Header */}
                     <tr className="bg-sky-50">
@@ -228,8 +264,9 @@ export default function SertifikatList() {
                     </tr>
                     {/* Group Rows */}
                     {group.prodis.map((prodi, idx) => {
+                      // PERBAIKAN: Menggunakan getSafeTimestamp untuk menghindari error saat data null
                       const latestSertifikat = [...prodi.sertifikats].sort((a, b) =>
-                        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                        getSafeTimestamp(b.created_at) - getSafeTimestamp(a.created_at)
                       )[0];
 
                       return (
@@ -350,7 +387,8 @@ export default function SertifikatList() {
                     </tr>
                   ) : (
                     selectedProdiSertifikats
-                      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                      // PERBAIKAN: Menggunakan getSafeTimestamp juga di dalam modal
+                      .sort((a, b) => getSafeTimestamp(b.created_at) - getSafeTimestamp(a.created_at))
                       .map((sertifikat, index) => (
                         <tr key={sertifikat.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
                           <td className="px-4 py-3 text-slate-400">{index + 1}</td>

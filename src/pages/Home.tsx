@@ -260,7 +260,7 @@ function BerandaContent({ onNavigate }: { onNavigate: (page: string) => void }) 
   const handleVote = async () => {
     if (!selectedPoll) return;
     try {
-      await fetch(`${import.meta.env.VITE_API_URL || 'https://api-lpm.test/api'}/poll/vote`, {
+      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/poll/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ option_id: selectedPoll }),
