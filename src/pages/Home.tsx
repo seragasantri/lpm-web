@@ -345,33 +345,40 @@ function BerandaContent({ onNavigate }: { onNavigate: (page: string) => void }) 
       {/* SAMBUTAN */}
       <div className="bg-white rounded-3xl shadow-md border border-slate-100 overflow-hidden relative p-1 mt-8">
         <div className="absolute top-0 left-0 w-2 h-full bg-yellow-400 rounded-l-3xl"></div>
-        <div className="flex flex-col md:flex-row items-center p-8 md:p-12 gap-8">
-          <div className="w-32 h-32 md:w-48 md:h-48 rounded-full border-4 border-sky-100 shadow-xl overflow-hidden flex-shrink-0 relative">
-            <img
-              src={sambutan?.foto || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400&h=400'}
-              alt={sambutan?.nama || 'Ketua LPM'}
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div className="flex-1 relative">
-            <Quote className="absolute -top-6 -left-6 w-16 h-16 text-sky-50 opacity-50 transform -scale-x-100" />
-            <h3 className="text-2xl md:text-3xl font-extrabold text-sky-900 mb-2">Sambutan Ketua LPM</h3>
-            {sambutan?.konten ? (
-              <div
-                className="text-lg text-slate-600 italic leading-relaxed mb-6 font-medium relative z-10 [&>p]:mb-2"
-                dangerouslySetInnerHTML={{ __html: sambutan.konten }}
+        {sambutan ? (
+
+          <div className="flex flex-col md:flex-row items-center p-8 md:p-12 gap-8">
+            <div className="w-32 h-32 md:w-48 md:h-48 rounded-full border-4 border-sky-100 shadow-xl overflow-hidden flex-shrink-0 relative">
+              <img
+                src={sambutan?.foto || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400&h=400'}
+                alt={sambutan?.nama || 'Ketua LPM'}
+                className="w-full h-full object-cover"
               />
-            ) : (
-              <p className="text-lg text-slate-600 italic leading-relaxed mb-6 font-medium relative z-10">
-                "Komitmen terhadap mutu adalah sebuah perjalanan yang tidak pernah berakhir. Di LPM UIN Raden Fatah, kami mendedikasikan diri untuk memastikan bahwa setiap proses akademik berjalan sesuai standar tertinggi nasional dan internasional."
-              </p>
-            )}
-            <div>
-              <p className="font-bold text-sky-900">{sambutan?.nama || 'Dr. H. Nama Pimpinan, M.Ag.'}</p>
-              <p className="text-sm text-yellow-600 font-semibold">{sambutan?.jabatan || 'Ketua Lembaga Penjaminan Mutu'}</p>
+            </div>
+            <div className="flex-1 relative">
+              <Quote className="absolute -top-6 -left-6 w-16 h-16 text-sky-50 opacity-50 transform -scale-x-100" />
+              <h3 className="text-2xl md:text-3xl font-extrabold text-sky-900 mb-2">Sambutan Ketua LPM</h3>
+              {sambutan?.konten ? (
+                <div
+                  className="text-lg text-slate-600 italic leading-relaxed mb-6 font-medium relative z-10 [&>p]:mb-2"
+                  dangerouslySetInnerHTML={{ __html: sambutan.konten }}
+                />
+              ) : (
+                <p className="text-lg text-slate-600 italic leading-relaxed mb-6 font-medium relative z-10">
+                  "Komitmen terhadap mutu adalah sebuah perjalanan yang tidak pernah berakhir. Di LPM UIN Raden Fatah, kami mendedikasikan diri untuk memastikan bahwa setiap proses akademik berjalan sesuai standar tertinggi nasional dan internasional."
+                </p>
+              )}
+              <div>
+                <p className="font-bold text-sky-900">{sambutan?.nama || 'Dr. H. Nama Pimpinan, M.Ag.'}</p>
+                <p className="text-sm text-yellow-600 font-semibold">{sambutan?.jabatan || 'Ketua Lembaga Penjaminan Mutu'}</p>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <p>
+            Proses mengambil data ...
+          </p>
+        )}
       </div>
 
       {/* MARQUEE */}

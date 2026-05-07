@@ -42,41 +42,47 @@ export default function SambutanPage() {
               <div className="text-yellow-400 mb-6">
                 <Quote className="w-12 h-12" />
               </div>
-
               {/* Photo and quote layout */}
-              <div className="flex flex-col md:flex-row gap-8 items-start">
-                {/* Photo */}
-                <div className="flex-shrink-0">
-                  <img
-                    src={sambutan?.foto || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200&h=200'}
-                    alt={sambutan?.nama || 'Ketua LPM UIN Raden Fatah'}
-                    className="w-48 h-48 rounded-full object-cover ring-4 ring-sky-100"
-                  />
-                </div>
+              {sambutan ? (
 
-                {/* Quote text and signature */}
-                <div className="flex-1">
-                  {sambutan?.konten ? (
-                    <div
-                      className="text-xl md:text-2xl italic text-slate-600 leading-relaxed mb-8 [&>p]:mb-4"
-                      dangerouslySetInnerHTML={{ __html: sambutan.konten }}
+                <div className="flex flex-col md:flex-row gap-8 items-start">
+                  {/* Photo */}
+                  <div className="flex-shrink-0">
+                    <img
+                      src={sambutan?.foto || 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200&h=200'}
+                      alt={sambutan?.nama || 'Ketua LPM UIN Raden Fatah'}
+                      className="w-48 h-48 rounded-full object-cover ring-4 ring-sky-100"
                     />
-                  ) : (
-                    <blockquote className="text-xl md:text-2xl italic text-slate-600 leading-relaxed mb-8">
-                      "Komitmen terhadap mutu adalah sebuah perjalanan yang tidak pernah berakhir. Di LPM UIN Raden Fatah, kami mendedikasikan diri untuk memastikan bahwa setiap proses akademik berjalan sesuai standar tertinggi nasional dan internasional."
-                    </blockquote>
-                  )}
+                  </div>
 
-                  <div className="border-t border-slate-200 pt-6">
-                    <p className="text-slate-800 font-semibold text-lg">
-                      {sambutan?.nama || 'Dr. H. Nama Pimpinan, M.Ag.'}
-                    </p>
-                    <p className="text-slate-500 text-sm mt-1">
-                      {sambutan?.jabatan || 'Ketua Lembaga Penjaminan Mutu UIN Raden Fatah Palembang'}
-                    </p>
+                  {/* Quote text and signature */}
+                  <div className="flex-1">
+                    {sambutan?.konten ? (
+                      <div
+                        className="text-xl md:text-2xl italic text-slate-600 leading-relaxed mb-8 [&>p]:mb-4"
+                        dangerouslySetInnerHTML={{ __html: sambutan.konten }}
+                      />
+                    ) : (
+                      <blockquote className="text-xl md:text-2xl italic text-slate-600 leading-relaxed mb-8">
+                        "Komitmen terhadap mutu adalah sebuah perjalanan yang tidak pernah berakhir. Di LPM UIN Raden Fatah, kami mendedikasikan diri untuk memastikan bahwa setiap proses akademik berjalan sesuai standar tertinggi nasional dan internasional."
+                      </blockquote>
+                    )}
+
+                    <div className="border-t border-slate-200 pt-6">
+                      <p className="text-slate-800 font-semibold text-lg">
+                        {sambutan?.nama || 'Dr. H. Nama Pimpinan, M.Ag.'}
+                      </p>
+                      <p className="text-slate-500 text-sm mt-1">
+                        {sambutan?.jabatan || 'Ketua Lembaga Penjaminan Mutu UIN Raden Fatah Palembang'}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <p>
+                  Proses mengambil data ...
+                </p>
+              )}
             </div>
           </div>
         </div>
