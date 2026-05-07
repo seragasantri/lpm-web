@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Search, Menu, X, ChevronDown } from 'lucide-react';
 import { navItems } from '../data/navigation';
-import LanguageSwitcher from './LanguageSwitcher';
 import { useSiteSettings } from '../context/SiteSettingsContext';
 
 export default function Navbar() {
