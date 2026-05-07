@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback } from 'react';
 import { Upload, File, Image, X, Loader } from 'lucide-react';
-import { uploadImage, uploadFile } from '../../lib/api';
+import { uploadImage, uploadFile, deleteImage } from '../../lib/api';
 
 export interface FileUploadProps {
   value?: string;
@@ -75,6 +75,12 @@ export default function FileUpload({
   };
 
   const handleRemove = () => {
+    // Delete from backend if value exists
+    if (value && isImage) {
+      deleteImage(value).catch(err => {
+        console.error('Failed to delete image from server:', err);
+      });
+    }
     onChange?.('');
     setPreviewError(false);
   };

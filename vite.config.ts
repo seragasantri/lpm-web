@@ -9,4 +9,16 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
   },
+  server: {
+    proxy: {
+      '/storage': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
 })
