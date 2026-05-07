@@ -1,120 +1,114 @@
 # ============================================================
 # NGINX CONFIG UNTUK LPM UIN RADEN FATAH
 # ============================================================
-# Lokasi file ini di VPS biasanya:
-#   /etc/nginx/sites-available/lpm-web
-#   atau /etc/nginx/conf.d/lpm-web.conf
+# Struktur folder di VPS:
+#   /var/www/lpm/lpm-main/
+#   ├── index.html          ← root = /var/www/lpm/lpm-main
+#   ├── dist/               ← hasil build (npm run build)
+#   │   └── assets/        ← JS/CSS bundles
+#   └── public/            ← static files
+#       ├── og-generator.php
+#       └── og-default.svg
 #
-# Aktifkan dengan:
-#   sudo ln -s /etc/nginx/sites-available/lpm-web /etc/nginx/sites-enabled/
+# Deploy:
+#   sudo cp /etc/nginx/sites-available/lpm-main /etc/nginx/sites-available/lpm-main.bak
+#   sudo nano /etc/nginx/sites-available/lpm-main
 #   sudo nginx -t
 #   sudo systemctl reload nginx
 # ============================================================
 
+# map di level http (atas file, sebelum server block)
+map $http_user_agent $is_social_crawler {
+    default                                                 0;
+    "~*(?i)facebookexternalhit"                            1;
+    "~*(?i)facebookcatalog"                               1;
+    "~*(?i)Facebot"                                        1;
+    "~*(?i)twitterbot"                                     1;
+    "~*(?i)tweetbot"                                       1;
+    "~*(?i)linkedinbot"                                    1;
+    "~*(?i)pinterest"                                      1;
+    "~*(?i)whatsapp"                                       1;
+    "~*(?i)slackbot"                                       1;
+    "~*(?i)Slack-ImgGetter"                                1;
+    "~*(?i)telegrambot"                                   1;
+    "~*(?i)TelegramBot"                                   1;
+    "~*(?i)discordbot"                                    1;
+    "~*(?i)Googlebot"                                     1;
+    "~*(?i)Google-InspectionTool"                         1;
+    "~*(?i)bingbot"                                        1;
+    "~*(?i)DuckDuckBot"                                    1;
+}
+
 server {
     listen 80;
     server_name lpm.radenfatah.ac.id www.lpm.radenfatah.ac.id;
-    root /var/www/lpm-web/public;  # Ganti dengan path folder dist React
-    index index.html index.php;
 
-    # Logging
+    # root harus ke folder yang ADA index.html (bukan folder public!)
+    root /var/www/lpm/lpm-main;
+    index index.html;
+
     access_log /var/log/nginx/lpm-access.log;
     error_log /var/log/nginx/lpm-error.log;
 
     # ============================================================
-    # BAGIAN PENTING: Social Media OG Tags (WhatsApp, Facebook, dll)
+    # PRIORITAS 1: Static JS/CSS dari dist/assets/
+    # Serve langsung dari filesystem — JANGAN pernah rewrite
     # ============================================================
-    # Ketika link berita di-share ke WhatsApp/Facebook/dll,
-    # crawler mereka tidak bisa jalankan JavaScript (SPA).
-    # Kita arahkan request crawler ke file PHP yang generate
-    # HTML dengan meta tag OG yang benar.
-
-    # Daftar crawler sosial yang perlu di-intercept
-    # Termasuk WhatsApp, Facebook, Twitter, LinkedIn, Pinterest, Telegram, dll
-    set $is_social_crawler 0;
-
-    if ($http_user_agent ~* "facebookexternalhit|facebookcatalog|facebot|twitterbot|x\.com|tweetbot|linkedinbot|pinterest|whatsapp|slackbot|Slack-ImgGetter|telegrambot|TelegramBot|discordbot|Googlebot|Google-InspectionTool|bingbot|msnbot|DuckDuckBot") {
-        set $is_social_crawler 1;
+    location /dist/assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
     }
 
-    # Hanya untuk path /berita/<slug> (bukan /berita/ atau /berita saja)
-    set $is_berita_detail 0;
-
-    if ($request_uri ~* "^/berita/[a-zA-Z0-9_-]+") {
-        set $is_berita_detail 1;
-    }
-
-    # Jika crawler sosial mengakses halaman berita detail
-    # Arahkan ke og-generator.php dengan slug sebagai parameter
-    location ~* ^/berita/([a-zA-Z0-9_-]+)$ {
-        if ($is_social_crawler = 1) {
-            # Parse slug dari URI dan redirect ke PHP generator
-            # Ini akan serve HTML dengan og:title, og:image yang benar
-            rewrite ^/berita/([^/]+)$ /og-generator.php?slug=$1 last;
-        }
-
-        # Untuk browser biasa, serve SPA (index.html)
-        try_files $uri $uri/ /index.html;
-    }
-
-    # ============================================================
-    # Static files - langsung serve dari folder dist
-    # ============================================================
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+    # Static file extension (catch-all untuk semua asset build)
+    location ~* ^/dist/assets/.+\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|webp)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
         try_files $uri =404;
     }
 
     # ============================================================
-    # Google Translate widget - load on-demand saja
-    # Jangan auto-load saat halaman pertama dibuka!
+    # PRIORITAS 2: Static files dari public/
     # ============================================================
-    location /googletranslate.js {
-        # File ini di-load hanya saat user klik tombol bahasa
-        # Isi file ini akan inject Google Translate element secara manual
-        add_header Content-Type application/javascript;
-        return 200 '
-// Load Google Translate secara manual saat diperlukan
-(function() {
-  if (window.google && window.google.translate) return;
-  var gt = document.createElement("script");
-  gt.src = "//translate.google.com/translate_a/element.js?cb=gtLoaded";
-  gt.async = true;
-  document.head.appendChild(gt);
-})();
+    location /public/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
 
-function gtLoaded() {
-  if (window.location.pathname.startsWith("/admin")) return;
-  try {
-    new google.translate.TranslateElement({
-      pageLanguage: "id",
-      includedLanguages: "id,en,ar",
-      layout: 0,
-      multilanguageLevel: true
-    }, "google_translate_element");
-  } catch(e) {
-    console.warn("Google Translate failed");
-  }
-}
-';
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|webp)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
     }
 
     # ============================================================
-    # PHP untuk OG Generator (social media crawler)
+    # PRIORITAS 3: PHP OG Generator (social media crawler)
     # ============================================================
-    location ~ ^/og-generator\.php$ {
-        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;  # Ganti versi PHP sesuai server
+    location = /public/og-generator.php {
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
         fastcgi_index index.php;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
         include fastcgi_params;
-
-        # Cache control untuk OG HTML
         add_header Cache-Control "public, s-maxage=7200, stale-while-revalidate=86400";
+        add_header X-Robots-Tag "noindex, nofollow";
+    }
+
+    # ============================================================
+    # PRIORITAS 4: Browser biasa → SPA
+    # Semua path → serve index.html (SPA React router tangani)
+    # ============================================================
+    location / {
+        # Crawler sosial yang akses /berita/<slug> → rewrite ke PHP generator
+        if ($is_social_crawler = 1) {
+            if ($request_uri ~ "^/berita/([a-zA-Z0-9_-]+)") {
+                set $slug $1;
+                rewrite ^ /public/og-generator.php?slug=$slug last;
+            }
+        }
+
+        # Browser biasa: SPA serve index.html
+        try_files $uri $uri/ /index.html;
     }
 
     # ============================================================
@@ -122,12 +116,11 @@ function gtLoaded() {
     # ============================================================
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
-    # Gzip compression
     gzip on;
     gzip_vary on;
     gzip_min_length 1024;
-    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml application/json application/javascript;
+    gzip_proxied any;
+    gzip_types text/plain text/css text/xml text/javascript application/javascript application/x-javascript application/xml application/json;
 }

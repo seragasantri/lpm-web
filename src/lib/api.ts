@@ -1,15 +1,30 @@
 const API_BASE = import.meta.env.VITE_API_URL || "https://api-lpm.test/api";
 
+// Token refresh state
+let lastActivityTime = Date.now();
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+// Token expiry tracking
+const TOKEN_EXPIRY_BUFFER = 15 * 60 * 1000; // 15 minutes before expiry
+
 function getToken(): string | null {
   return localStorage.getItem("lpm_token");
 }
 
-function getUser(): string | null {
-  return localStorage.getItem("lpm_user");
+function getTokenExpiry(): number | null {
+  const expiry = localStorage.getItem("lpm_token_expiry");
+  return expiry ? parseInt(expiry) : null;
 }
 
-function setToken(token: string) {
+function setToken(token: string, expiresIn: number) {
+  const expiry = Date.now() + expiresIn * 1000;
   localStorage.setItem("lpm_token", token);
+  localStorage.setItem("lpm_token_expiry", String(expiry));
+}
+
+function getUser(): string | null {
+  return localStorage.getItem("lpm_user");
 }
 
 function setUser(user: string) {
@@ -18,15 +33,116 @@ function setUser(user: string) {
 
 function clearAuth() {
   localStorage.removeItem("lpm_token");
+  localStorage.removeItem("lpm_token_expiry");
   localStorage.removeItem("lpm_user");
+}
+
+// Update activity timestamp
+function updateActivity() {
+  lastActivityTime = Date.now();
+}
+
+// Subscribe to token refresh
+function subscribeTokenRefresh(callback: (token: string) => void) {
+  refreshSubscribers.push(callback);
+}
+
+// Notify all subscribers of new token
+function onTokenRefreshed(token: string) {
+  refreshSubscribers.forEach(callback => callback(token));
+  refreshSubscribers = [];
+}
+
+// Check if token needs refresh (less than 15 minutes remaining or already expired)
+function shouldRefreshToken(): boolean {
+  const expiry = getTokenExpiry();
+  if (!expiry) return false;
+
+  const timeUntilExpiry = expiry - Date.now();
+  // Refresh if less than 15 minutes remaining or already expired
+  return timeUntilExpiry < TOKEN_EXPIRY_BUFFER;
+}
+
+// Refresh token
+async function doRefreshToken(): Promise<string> {
+  try {
+    const response = await fetch(`${API_BASE}/auth/refresh`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-Language": localStorage.getItem("language") || "id",
+        Authorization: `Bearer ${getToken()}`,
+      },
+    });
+
+    const json: ApiResponse<{ access_token: string }> = await response.json();
+    if (!json.success) throw new Error(json.message);
+
+    const newToken = json.data.access_token;
+    // Assume same expiry duration (24 hours)
+    setToken(newToken, 86400);
+    onTokenRefreshed(newToken);
+
+    return newToken;
+  } catch (error) {
+    // If refresh fails, clear auth and redirect to login
+    clearAuth();
+    if (!window.location.pathname.includes("/login")) {
+      window.location.href = "/login";
+    }
+    throw error;
+  }
+}
+
+// Track user activity - update on any interaction
+if (typeof window !== 'undefined') {
+  ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(event => {
+    window.addEventListener(event, updateActivity, { passive: true });
+  });
+
+  // Check for activity every minute
+  setInterval(async () => {
+    const token = getToken();
+    if (!token) return;
+
+    // If there's been activity since last check AND token needs refresh
+    if (shouldRefreshToken() && !isRefreshing) {
+      try {
+        isRefreshing = true;
+        await doRefreshToken();
+      } catch (error) {
+        console.error('Auto-refresh failed:', error);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+  }, 60 * 1000); // Check every minute
 }
 
 async function apiFetch(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<Response> {
-  const token = getToken();
+  let token = getToken();
   const lang = localStorage.getItem("language") || "id";
+
+  // Update activity on every request
+  updateActivity();
+
+  // If token needs refresh, do it first (but only one at a time)
+  if (token && shouldRefreshToken() && !isRefreshing) {
+    isRefreshing = true;
+    try {
+      const newToken = await doRefreshToken();
+      token = newToken;
+    } catch (error) {
+      // Refresh failed, will try with old token anyway
+    } finally {
+      isRefreshing = false;
+    }
+  }
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -42,8 +158,8 @@ async function apiFetch(
     headers,
   });
 
-  // Handle 401 Unauthorized
-  if (response.status === 401) {
+  // Handle 401 Unauthorized - if not during a refresh attempt
+  if (response.status === 401 && !isRefreshing) {
     clearAuth();
     // Redirect to login if not already on login page
     if (!window.location.pathname.includes("/login")) {
@@ -92,7 +208,7 @@ export async function login(
   }
 
   // Simpan token dan user (normalized for frontend use)
-  setToken(json.data.access_token);
+  setToken(json.data.access_token, json.data.expires_in);
   const normalizedUser = {
     ...json.data.user,
     id: String(json.data.user.id),
@@ -124,12 +240,23 @@ export async function getMe(): Promise<LoginResponse["user"]> {
   return json.data;
 }
 
-export async function refreshToken(): Promise<string> {
-  const response = await apiFetch("/auth/refresh", { method: "POST" });
+async function refreshTokenApi(): Promise<string> {
+  const response = await fetch(`${API_BASE}/auth/refresh`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "X-Language": localStorage.getItem("language") || "id",
+      Authorization: `Bearer ${getToken()}`,
+    },
+  });
+
   const json: ApiResponse<{ access_token: string }> = await response.json();
   if (!json.success) throw new Error(json.message);
   const token = json.data.access_token;
-  setToken(token);
+  // Same expiry (24 hours = 86400 seconds)
+  setToken(token, 86400);
+  onTokenRefreshed(token);
   return token;
 }
 
@@ -671,6 +798,15 @@ export async function uploadImage(file: File): Promise<UploadResponse> {
   const json: ApiResponse<UploadResponse> = await response.json();
   if (!json.success) throw new Error(json.message);
   return json.data;
+}
+
+export async function deleteImage(url: string): Promise<void> {
+  const response = await apiFetch("/upload/image", {
+    method: "DELETE",
+    body: JSON.stringify({ url }),
+  });
+  const json: ApiResponse<null> = await response.json();
+  if (!json.success) throw new Error(json.message);
 }
 
 export async function uploadFile(file: File): Promise<UploadResponse> {
@@ -1785,4 +1921,5 @@ export {
   clearAuth,
   apiFetch,
   API_BASE,
+  refreshTokenApi,
 };

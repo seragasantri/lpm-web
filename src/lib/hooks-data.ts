@@ -245,7 +245,7 @@ export function useBeritas(params?: { status?: string; kategori_id?: number }) {
   const queryKey = params ? ["beritas", params] : ["beritas"];
   return useQuery({
     queryKey,
-    queryFn: () => fetchList<Berita[]>("/beritas"),
+    queryFn: () => fetchList<Berita[]>("/public/beritas"),
   });
 }
 
