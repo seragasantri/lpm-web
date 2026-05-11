@@ -18,9 +18,9 @@ const kategoriColors: Record<string, string> = {
   ISO: 'bg-sky-100 text-sky-700',
 };
 
-// Helper function to get view count from localStorage
-function getViews(id: number): number {
-  return parseInt(localStorage.getItem(`lpm_berita_views_${id}`) || '0');
+// Helper function to get view count from berita data
+function getViews(berita: BeritaResponse): number {
+  return berita?.views || 0;
 }
 
 export default function BeritaList() {
@@ -103,7 +103,7 @@ export default function BeritaList() {
       render: (_: unknown, item: BeritaResponse) => (
         <span className="flex items-center gap-1.5 text-sm text-slate-600 font-medium">
           <Eye size={14} className="text-slate-400" />
-          {getViews(item.id)}x
+          {getViews(item)}x
         </span>
       ),
     },

@@ -140,6 +140,17 @@ export default function BeritaDetailPage() {
     };
   }, [berita]);
 
+  // Increment view count when berita loads
+  useEffect(() => {
+    if (berita?.id) {
+      // Get API base URL from environment or use default
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+      fetch(`${API_BASE}/api/public/beritas/${berita.id}/view`, {
+        method: 'POST',
+      }).catch(err => console.error('Failed to increment view:', err));
+    }
+  }, [berita?.id]);
+
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
       <div className="relative w-16 h-16">
@@ -165,8 +176,6 @@ export default function BeritaDetailPage() {
     </div>
   );
 
-  const viewKey = `lpm_berita_views_${berita.id}`;
-  const views = parseInt(localStorage.getItem(viewKey) || '0');
   const kategoriNama = berita.kategori?.nama || 'Berita';
   const gambarUrl = berita.gambar ? `${berita.gambar}` : null;
   const displayExcerpt = getExcerpt(berita.konten, berita.excerpt);
@@ -241,7 +250,7 @@ export default function BeritaDetailPage() {
                   </span>
                   <span className="flex items-center gap-2 text-slate-500 font-medium">
                     <Eye size={16} className="text-blue-400" />
-                    {views} kali dibaca
+                    {berita.views || 0} kali dibaca
                   </span>
                 </div>
 
