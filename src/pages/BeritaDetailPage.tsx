@@ -84,12 +84,14 @@ export default function BeritaDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [related, setRelated] = useState<BeritaResponse[]>([]);
   const abortControllerRef = { current: null as AbortController | null };
+  const hasLoadedRef = { current: false as boolean };
 
   const loadBerita = useCallback(async () => {
-    if (!slug) {
+    if (!slug || hasLoadedRef.current) {
       setLoading(false);
       return;
     }
+    hasLoadedRef.current = true;
 
     // Cancel previous request
     if (abortControllerRef.current) {
@@ -139,17 +141,7 @@ export default function BeritaDetailPage() {
       document.title = 'LPM UIN Raden Fatah Palembang';
     };
   }, [berita]);
-
-  // Increment view count when berita loads
-  useEffect(() => {
-    if (berita?.id) {
-      // Get API base URL from environment or use default
-      const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
-      fetch(`${API_BASE}/api/public/beritas/${berita.id}/view`, {
-        method: 'POST',
-      }).catch(err => console.error('Failed to increment view:', err));
-    }
-  }, [berita?.id]);
+  // Note: View increment handled automatically by backend (publicShow)
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
