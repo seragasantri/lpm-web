@@ -602,6 +602,7 @@ export interface BeritaResponse {
     updated_at: string;
   };
   tags?: TagResponse[];
+  views?: number;
   created_at: string;
   updated_at: string;
 }

@@ -61,8 +61,8 @@ export default function BeritaPage() {
     return matchKategori && matchTag && matchSearch;
   });
 
-  const getViews = (id: number) => {
-    return parseInt(localStorage.getItem(`lpm_berita_views_${id}`) || '0');
+  const getViews = (berita: any) => {
+    return berita?.views || 0;
   };
 
   const handleKategoriClick = (nama: string) => {
@@ -202,7 +202,7 @@ export default function BeritaPage() {
                   </span>
                   <span className="flex items-center gap-1 font-medium">
                     <Eye size={14} />
-                    {getViews(item.id)} dilihat
+                    {getViews(item)} dilihat
                   </span>
                 </div>
                 <h3 className="text-lg font-bold text-slate-800 mb-3 group-hover:text-sky-600 transition-colors line-clamp-2 leading-snug">

@@ -271,8 +271,8 @@ function BerandaContent({ onNavigate }: { onNavigate: (page: string) => void }) 
     }
   };
 
-  const getViews = (id: number) => {
-    return parseInt(localStorage.getItem(`lpm_berita_views_${id}`) || '0');
+  const getViews = (berita: any) => {
+    return berita?.views || 0;
   };
 
   const formatDate = (dateStr: string) => {
@@ -436,7 +436,7 @@ function BerandaContent({ onNavigate }: { onNavigate: (page: string) => void }) 
                   <div className="md:w-3/5 p-6 md:p-8 flex flex-col justify-between h-full overflow-hidden">
                     <div>
                       <div className="flex items-center text-xs text-sky-600 mb-3 font-semibold bg-sky-50 inline-block px-2.5 py-1 rounded-md">
-                        <Calendar className="w-3.5 h-3.5 mr-1 inline" /> {formatDate(news.tanggal)} • {getViews(news.id)} dilihat
+                        <Calendar className="w-3.5 h-3.5 mr-1 inline" /> {formatDate(news.tanggal)} • {getViews(news)} dilihat
                       </div>
                       <h4 className="text-xl md:text-2xl font-bold text-slate-800 mb-3 group-hover:text-sky-600 transition-colors line-clamp-2 leading-snug">
                         <Link to={`/berita/${news.slug}`}>{news.judul}</Link>
