@@ -217,12 +217,9 @@ export default function Navbar() {
   const timeStr = `${hours}:${minutes} WIB`;
 
   return (
-    <header className="sticky top-0 z-50">
-      {/* Top Bar */}
-      <div
-        className={`bg-sky-950 text-sky-100 transition-all duration-300 overflow-hidden ${scrolled ? 'h-0 opacity-0' : 'h-10 opacity-100'
-          }`}
-      >
+    <header className="sticky top-0 z-50 transition-transform duration-300" style={{ transform: scrolled ? 'translateY(-2.5rem)' : 'translateY(0)' }}>
+      {/* Top Bar - always visible */}
+      <div className="bg-sky-950 text-sky-100 h-10">
         <div className="max-w-7xl mx-auto px-4 h-10 flex items-center justify-between">
           <div className="hidden sm:flex items-center gap-4 text-xs">
             <span className="flex items-center gap-1.5">
