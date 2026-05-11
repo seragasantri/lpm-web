@@ -95,7 +95,7 @@ export default function BeritaList() {
     {
       key: 'author', label: 'Author',
       render: (_: unknown, item: BeritaResponse) => (
-        <span className="text-slate-500 text-sm">{item.author?.username || '-'}</span>
+        <span className="text-slate-500 text-sm">{item.author_name || item.author?.username || '-'}</span>
       ),
     },
     {

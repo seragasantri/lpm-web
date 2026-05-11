@@ -60,11 +60,18 @@ export default function BeritaForm({ editId }: Props) {
     if (id) {
       const numId = parseInt(id);
       getBerita(numId).then(b => {
+        // Convert date to YYYY-MM-DD format for input type="date"
+        const formatDateForInput = (dateStr: string | null) => {
+          if (!dateStr) return new Date().toISOString().split('T')[0];
+          const d = new Date(dateStr);
+          return d.toISOString().split('T')[0];
+        };
+
         setForm({
           judul: b.judul,
           slug: b.slug,
           kategoris_id: String(b.kategoris_id),
-          tanggal: b.tanggal,
+          tanggal: formatDateForInput(b.tanggal),
           gambar: b.gambar ? `${b.gambar}` : '',
           excerpt: b.excerpt || '',
           konten: b.konten,
