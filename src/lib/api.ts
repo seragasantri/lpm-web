@@ -605,6 +605,7 @@ export interface BeritaResponse {
   views?: number;
   created_at: string;
   updated_at: string;
+  author_name?: string;
 }
 export interface BeritaListResponse {
   data: BeritaResponse[];
